@@ -32,7 +32,8 @@ const registerUser = asyncHandler(async (req, res) => {
     name,
     email,
     password: hashedPassword,
-    profileUrl: "",
+    profileUrl:
+      "https://globaladvertisingstorage.s3.ap-southeast-2.amazonaws.com/profiles/default_avatar.jpg",
     company: company || "",
     contact: contact || "",
   });
@@ -78,7 +79,7 @@ const login = asyncHandler(async (req, res) => {
   const token = jwt.sign(
     {
       id: userFound._id,
-      username: userFound.username,
+      name: userFound.name,
       email: userFound.email,
       role: userFound.role,
       profileUrl: userFound.profileUrl,
