@@ -133,7 +133,10 @@ export default function Login({ view, switchView, onClose }: LoginProps) {
         let msg = "Registration failed!";
         if (Array.isArray(data?.errors)) {
           msg = data.errors
-            .map((e: any) => e.msg || e.message || String(e))
+            .map(
+              (e: { msg?: string; message?: string }) =>
+                e.msg || e.message || String(e)
+            )
             .join(", ");
         } else if (typeof data?.error === "string") {
           msg = data.error;
@@ -146,7 +149,7 @@ export default function Login({ view, switchView, onClose }: LoginProps) {
       } else {
         setRegisterError("An unexpected error occurred.");
       }
-      setTimeout(() => setRegisterError(null), 1500);
+      setTimeout(() => setRegisterError(""), 1500);
     } finally {
       setLoading(false);
     }
