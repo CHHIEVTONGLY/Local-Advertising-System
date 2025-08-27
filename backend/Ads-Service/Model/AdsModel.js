@@ -21,6 +21,11 @@ const Ads = new Schema(
       enum: ["draft", "pending", "active", "completed"],
       default: "draft",
     },
+    billingStatus: {
+      type: String,
+      enum: ["unpaid", "paid", "refunded"],
+      default: "unpaid",
+    },
     reviewStatus: {
       type: String,
       enum: ["pending", "approved", "rejected"],
