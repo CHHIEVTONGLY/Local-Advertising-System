@@ -14,6 +14,7 @@ const getAds = asyncHandler(async (req, res) => {
 
     const filter = {};
     filter.reviewStatus = "approved";
+    filter.billingStatus = "paid";
     if (q) filter.title = { $regex: String(q), $options: "i" };
     if (ownerId) filter.ownerId = ownerId;
 
@@ -47,12 +48,14 @@ const getAdsAdmin = asyncHandler(async (req, res) => {
     const {
       q,
       status,
+      billingStatus = "paid",
       ownerId,
       page = "1",
       limit = "20",
       sort = "-createdAt",
     } = req.query;
     const filter = {};
+    filter.billingStatus = billingStatus;
     if (status) filter.status = status;
     if (q) filter.title = { $regex: String(q), $options: "i" };
     if (ownerId) filter.ownerId = ownerId;
@@ -88,6 +91,7 @@ const createAds = asyncHandler(async (req, res) => {
       displayTime,
       pricePerSecond,
       status = "draft",
+      billingStatus = "unpaid",
       totalCost,
     } = req.body;
     const publisherId = req.user.id;
@@ -141,6 +145,7 @@ const createAds = asyncHandler(async (req, res) => {
       displayTime: { startTime, endTime },
       pricePerSecond,
       status,
+      billingStatus,
       totalCost:
         typeof totalCost === "number" ? totalCost : duration * pricePerSecond,
       reviewStatus: "approved",

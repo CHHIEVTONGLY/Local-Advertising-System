@@ -28,4 +28,11 @@ mongoose.connect(uri).then(() => {
   console.log("MongoDB connected successfully");
 });
 
+app.use(
+  cors({
+    origin: process.env.FRONTEND_URL,
+    credentials: true,
+  })
+);
+
 app.listen(PORT, () => console.log(`Server started on port ${PORT}`));
