@@ -9,9 +9,7 @@ type AdType = "image" | "video";
 
 export default function PublishForm() {
   const [led, setLed] = useState("");
-  const [mediaUrl, setMediaUrl] = useState(
-    "https://globaladvertisingstorage.s3.ap-southeast-2.amazonaws.com/profiles/1755942859016-knhJenhHz.png"
-  );
+  const [mediaUrl, setMediaUrl] = useState(""); // Will be set after upload
   const [type, setType] = useState<AdType | "">("");
   const [start, setStart] = useState("");
   const [end, setEnd] = useState("");
@@ -24,6 +22,8 @@ export default function PublishForm() {
   const [mediaFile, setMediaFile] = useState<File | null>(null);
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
   const [dragOver, setDragOver] = useState(false);
+  const [uploading, setUploading] = useState(false); // New: Upload state
+  const [tempKey, setTempKey] = useState(""); // New: Store temp key
   const fileInputRef = useRef<HTMLInputElement | null>(null);
 
   // Local min for datetime-local (with seconds)
@@ -37,11 +37,12 @@ export default function PublishForm() {
     [duration, pricePerSecond]
   );
 
-  // Create ad data object to pass to CheckoutButton
+  // Create ad data object - include tempKey for payment
   const adData = useMemo(
     () => ({
       ledId: led,
-      mediaUrl,
+      tempKey, // S3 temp key instead of mediaUrl
+      fileName: mediaFile?.name || "",
       type,
       duration,
       displayTime: {
@@ -51,11 +52,62 @@ export default function PublishForm() {
       pricePerSecond,
       totalCost,
     }),
-    [led, mediaUrl, type, duration, start, end, pricePerSecond, totalCost]
+    [
+      led,
+      tempKey,
+      mediaFile?.name,
+      type,
+      duration,
+      start,
+      end,
+      pricePerSecond,
+      totalCost,
+    ]
   );
 
   // Get user token for authentication
   const userToken = useMemo(() => Cookies.get("token"), []);
+
+  // NEW: Upload file to backend API
+  async function uploadToTempStorage(file: File): Promise<string> {
+    setUploading(true);
+    setMsg("🔄 Uploading file to temporary storage...");
+
+    try {
+      const formData = new FormData();
+      formData.append("file", file);
+
+      const response = await fetch("/api/upload-temp", {
+        method: "POST",
+        body: formData,
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || "Failed to upload file");
+      }
+
+      const { tempKey, fileUrl, message } = await response.json();
+
+      setMsg("✅ File uploaded successfully!");
+      setMediaUrl(fileUrl); // Set the S3 URL for preview/validation
+
+      console.log("🔑 Temp key generated:", tempKey);
+      console.log("📁 File URL:", fileUrl);
+
+      return tempKey;
+    } catch (error) {
+      setMsg(
+        `❌ Upload failed: ${
+          error instanceof Error ? error.message : "Unknown error"
+        }`
+      );
+      console.error("Upload error:", error);
+      throw error;
+    } finally {
+      setUploading(false);
+    }
+  }
 
   // Form validation function
   const validateForm = () => {
@@ -66,8 +118,14 @@ export default function PublishForm() {
       return false;
     }
 
-    if (!mediaUrl) {
+    if (!tempKey) {
+      // Check for tempKey instead of mediaUrl
       setMsg("Please upload a media file.");
+      return false;
+    }
+
+    if (uploading) {
+      setMsg("Please wait for file upload to complete.");
       return false;
     }
 
@@ -99,20 +157,19 @@ export default function PublishForm() {
     return true;
   };
 
-  // Check if form is valid for checkout (for button disabled state)
+  // Check if form is valid for checkout
   const isFormValid = useMemo(() => {
     return (
       led &&
-      mediaUrl &&
+      tempKey && // Check for tempKey instead of mediaUrl
+      !uploading &&
       start &&
       end &&
       new Date(end) > new Date(start) &&
       duration > 0 &&
       totalCost > 0
     );
-  }, [led, mediaUrl, start, end, duration, totalCost]);
-
-  useEffect(() => {});
+  }, [led, tempKey, uploading, start, end, duration, totalCost]);
 
   // For images: duration = end - start (seconds)
   useEffect(() => {
@@ -132,7 +189,9 @@ export default function PublishForm() {
   }, [previewUrl]);
 
   function openFileDialog() {
-    fileInputRef.current?.click();
+    if (!uploading) {
+      fileInputRef.current?.click();
+    }
   }
 
   function clearMedia() {
@@ -142,6 +201,8 @@ export default function PublishForm() {
     setMediaUrl("");
     setType("");
     setDuration(0);
+    setTempKey("");
+    setMsg("");
   }
 
   // Helper: format Date to "YYYY-MM-DDTHH:mm:ss" (local)
@@ -175,36 +236,58 @@ export default function PublishForm() {
     });
   }
 
+  // UPDATED: Modified to call upload API
   async function pickFile(f: File | undefined | null) {
     if (!f) return;
     if (!f.type.startsWith("image/") && !f.type.startsWith("video/")) {
-      setMsg("Only image or video files are allowed.");
+      setMsg("❌ Only image or video files are allowed.");
       return;
     }
+
+    // Check file size (max 100MB)
+    if (f.size > 100 * 1024 * 1024) {
+      setMsg("❌ File size must be less than 100MB.");
+      return;
+    }
+
     setMsg("");
     setMediaFile(f);
     const isVideo = f.type.startsWith("video/");
     setType(isVideo ? "video" : "image");
 
+    // Create preview URL
     const url = URL.createObjectURL(f);
     if (previewUrl) URL.revokeObjectURL(previewUrl);
     setPreviewUrl(url);
 
-    // If video: detect duration and, if start set, auto-set end = start + duration
-    if (isVideo) {
-      try {
-        const secs = await getVideoDuration(f);
-        setDuration(secs > 0 ? secs : 0);
+    try {
+      // Upload to backend API immediately
+      const uploadedTempKey = await uploadToTempStorage(f);
+      setTempKey(uploadedTempKey);
 
-        if (start && secs > 0) {
-          const s = new Date(start);
-          const e = new Date(s.getTime() + secs * 1000);
-          setEnd(toLocalInputValue(e));
+      // Handle video duration
+      if (isVideo) {
+        try {
+          const secs = await getVideoDuration(f);
+          setDuration(secs > 0 ? secs : 0);
+
+          if (start && secs > 0) {
+            const s = new Date(start);
+            const e = new Date(s.getTime() + secs * 1000);
+            setEnd(toLocalInputValue(e));
+          }
+        } catch {
+          setMsg("⚠️ Could not read video duration.");
+          setDuration(0);
         }
-      } catch {
-        setMsg("Could not read video duration.");
-        setDuration(0);
       }
+    } catch (error) {
+      console.error("Upload error:", error);
+      // Reset file state if upload fails
+      setMediaFile(null);
+      setType("");
+      if (previewUrl) URL.revokeObjectURL(previewUrl);
+      setPreviewUrl(null);
     }
   }
 
@@ -218,12 +301,18 @@ export default function PublishForm() {
     e.preventDefault();
     e.stopPropagation();
     setDragOver(false);
-    void pickFile(e.dataTransfer.files?.[0]);
+    if (!uploading) {
+      void pickFile(e.dataTransfer.files?.[0]); // This will trigger upload API
+    }
   }
+
   function onDragOver(e: React.DragEvent<HTMLDivElement>) {
     e.preventDefault();
-    setDragOver(true);
+    if (!uploading) {
+      setDragOver(true);
+    }
   }
+
   function onDragLeave(e: React.DragEvent<HTMLDivElement>) {
     e.preventDefault();
     setDragOver(false);
@@ -266,19 +355,27 @@ export default function PublishForm() {
           onDragEnter={onDragOver}
           onDragLeave={onDragLeave}
           className={[
-            "mt-1 flex min-h-[160px] cursor-pointer flex-col items-center justify-center gap-2 rounded-md border-2 border-dashed p-6 text-center transition",
-            dragOver
-              ? "border-sky-500 bg-sky-50/50 dark:bg-sky-900/20"
-              : "border-slate-300 hover:border-sky-400 dark:border-slate-700",
+            "mt-1 flex min-h-[160px] flex-col items-center justify-center gap-2 rounded-md border-2 border-dashed p-6 text-center transition",
+            uploading
+              ? "border-yellow-500 bg-yellow-50/50 cursor-not-allowed"
+              : dragOver
+              ? "border-sky-500 bg-sky-50/50 dark:bg-sky-900/20 cursor-pointer"
+              : "border-slate-300 hover:border-sky-400 dark:border-slate-700 cursor-pointer",
           ].join(" ")}
         >
-          {!previewUrl ? (
+          {uploading ? (
+            <>
+              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-yellow-600"></div>
+              <p className="text-sm text-yellow-700">Uploading file...</p>
+              <p className="text-xs text-yellow-600">Please wait...</p>
+            </>
+          ) : !previewUrl ? (
             <>
               <p className="text-sm text-slate-700 dark:text-slate-200">
                 Drag & drop your file here, or click to browse
               </p>
               <p className="text-xs text-slate-500">
-                Accepted: image/*, video/*
+                Accepted: image/*, video/* (Max 100MB)
               </p>
             </>
           ) : (
@@ -307,10 +404,16 @@ export default function PublishForm() {
                     clearMedia();
                   }}
                   className="rounded-md border px-2 py-1 hover:bg-slate-50 dark:border-slate-700 dark:hover:bg-slate-800"
+                  disabled={uploading}
                 >
                   Remove
                 </button>
               </div>
+              {tempKey && (
+                <p className="text-xs text-green-600 mt-1">
+                  ✅ Uploaded to temporary storage
+                </p>
+              )}
             </div>
           )}
         </div>
@@ -321,6 +424,7 @@ export default function PublishForm() {
           accept="image/*,video/*"
           className="hidden"
           onChange={onBrowse}
+          disabled={uploading}
         />
       </div>
 
@@ -417,7 +521,19 @@ export default function PublishForm() {
         </div>
       </div>
 
-      {msg && <p className="text-sm text-red-600">{msg}</p>}
+      {msg && (
+        <p
+          className={`text-sm ${
+            msg.includes("✅") || msg.includes("successfully")
+              ? "text-green-600"
+              : msg.includes("🔄") || msg.includes("Uploading")
+              ? "text-yellow-600"
+              : "text-red-600"
+          }`}
+        >
+          {msg}
+        </p>
+      )}
 
       <CheckoutButton
         orderId={`ad_${Date.now()}_${led}`}
