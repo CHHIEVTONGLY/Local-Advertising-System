@@ -4,14 +4,14 @@ import { FormEvent, useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
 import axios, { AxiosError } from "axios";
 import Cookies from "js-cookie";
-import { useStore } from "@/lib/zustance";
+import { useStore } from "../../utils/zustance";
 import { jwtDecode } from "jwt-decode";
 import { UserPayload } from "@/app/types/UserPayload";
 import {
   forgotPasswordSchema,
   loginSchema,
   registerSchema,
-} from "@/lib/validation";
+} from "../../utils/validation";
 import { Loader } from "lucide-react";
 type View = "login" | "register" | "forgot-password";
 
