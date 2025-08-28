@@ -4,12 +4,29 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import Cookies from "js-cookie";
 import CheckoutButton from "../Stripe";
 import Image from "next/image";
+import {
+  formatDateForDisplay,
+  calculateDuration,
+} from "../../utils/timeHelper";
+import { useTimeValidation } from "../../validation/timeValidation";
 
 type AdType = "image" | "video";
 
+// ✅ LED Interface
+interface LED {
+  _id: string;
+  name: string;
+  location: string;
+  screenSize: string;
+  status: "active" | "inactive" | "maintenance";
+  __v?: number;
+}
+
 export default function PublishForm() {
+  const [mounted, setMounted] = useState(false);
+
   const [led, setLed] = useState("");
-  const [mediaUrl, setMediaUrl] = useState(""); // Will be set after upload
+  const [mediaUrl, setMediaUrl] = useState("");
   const [type, setType] = useState<AdType | "">("");
   const [start, setStart] = useState("");
   const [end, setEnd] = useState("");
@@ -18,18 +35,104 @@ export default function PublishForm() {
 
   const [msg, setMsg] = useState("");
 
+  // ✅ LED State
+  const [leds, setLeds] = useState<LED[]>([]);
+  const [loadingLEDs, setLoadingLEDs] = useState(true);
+  const [ledError, setLedError] = useState<string | null>(null);
+
   // Drag & drop state
   const [mediaFile, setMediaFile] = useState<File | null>(null);
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
   const [dragOver, setDragOver] = useState(false);
-  const [uploading, setUploading] = useState(false); // New: Upload state
-  const [tempKey, setTempKey] = useState(""); // New: Store temp key
+  const [uploading, setUploading] = useState(false);
+  const [tempKey, setTempKey] = useState("");
   const fileInputRef = useRef<HTMLInputElement | null>(null);
+
+  // ALL HOOKS MUST BE CALLED BEFORE ANY EARLY RETURNS
+  useEffect(() => {
+    setMounted(true);
+  }, []);
+
+  // ✅ Fetch LEDs from API
+  useEffect(() => {
+    const fetchLEDs = async () => {
+      try {
+        setLoadingLEDs(true);
+        setLedError(null);
+
+        const response = await fetch("/api/led", {
+          method: "GET",
+          headers: {
+            "Content-Type": "application/json",
+          },
+        });
+
+        if (!response.ok) {
+          throw new Error(`Failed to fetch LEDs: ${response.status}`);
+        }
+
+        const data = await response.json();
+
+        // Handle the response (your API returns array directly)
+        const ledsArray = Array.isArray(data) ? data : data.leds || [];
+        setLeds(ledsArray);
+      } catch (err) {
+        const errorMessage =
+          err instanceof Error ? err.message : "Unknown error";
+        setLedError(errorMessage);
+
+        // Fallback to hardcoded data during development
+        setLeds([
+          {
+            _id: "68ac276f23e137f1bb2fbf42",
+            name: "LED A",
+            location: "Fallback",
+            screenSize: "1280x960",
+            status: "active",
+          },
+          {
+            _id: "68ac276f23e137f1bb2fbf43",
+            name: "LED B",
+            location: "Fallback",
+            screenSize: "1280x960",
+            status: "active",
+          },
+        ]);
+      } finally {
+        setLoadingLEDs(false);
+      }
+    };
+
+    if (mounted) {
+      fetchLEDs();
+    }
+  }, [mounted]);
 
   // Local min for datetime-local (with seconds)
   const minLocal = useMemo(() => {
+    if (!mounted) return "";
     return toLocalInputValue(new Date());
-  }, []);
+  }, [mounted]);
+
+  // Get user token for authentication
+  const userToken = useMemo(() => {
+    if (!mounted) return "";
+    return Cookies.get("token") || "";
+  }, [mounted]);
+
+  // Use time validation hook
+  const {
+    bookedRanges,
+    isLoading: loadingBookedRanges,
+    hasConflict,
+    conflictMessage,
+    refreshBookedRanges,
+    lastUpdated,
+  } = useTimeValidation({
+    ledId: led,
+    startTime: start,
+    endTime: end,
+  });
 
   const totalCost = useMemo(
     () =>
@@ -41,7 +144,7 @@ export default function PublishForm() {
   const adData = useMemo(
     () => ({
       ledId: led,
-      tempKey, // S3 temp key instead of mediaUrl
+      tempKey,
       fileName: mediaFile?.name || "",
       type,
       duration,
@@ -65,10 +168,80 @@ export default function PublishForm() {
     ]
   );
 
-  // Get user token for authentication
-  const userToken = useMemo(() => Cookies.get("token"), []);
+  // Check if form is valid for checkout
+  const isFormValid = useMemo(() => {
+    return (
+      led &&
+      tempKey &&
+      !uploading &&
+      start &&
+      end &&
+      new Date(end) > new Date(start) &&
+      duration > 0 &&
+      totalCost > 0 &&
+      !hasConflict // Add time conflict check
+    );
+  }, [led, tempKey, uploading, start, end, duration, totalCost, hasConflict]);
 
-  // NEW: Upload file to backend API
+  // For images: duration = end - start (seconds)
+  useEffect(() => {
+    if (type !== "image") return;
+
+    const calculatedDuration = calculateDuration(start, end);
+    setDuration(calculatedDuration);
+  }, [type, start, end]);
+
+  // Cleanup preview URL
+  useEffect(() => {
+    return () => {
+      if (previewUrl) URL.revokeObjectURL(previewUrl);
+    };
+  }, [previewUrl]);
+
+  // If type is video and user changes start, auto-move end = start + video duration
+  useEffect(() => {
+    if (type !== "video") return;
+    if (!start || !duration) return;
+    const s = new Date(start);
+    const e = new Date(s.getTime() + duration * 1000);
+    setEnd(toLocalInputValue(e));
+  }, [type, start, duration]);
+
+  // Protected from hydration
+  if (!mounted) {
+    return (
+      <div className="space-y-4 rounded-lg border border-slate-200 bg-white p-4 dark:border-slate-800 dark:bg-slate-900">
+        <div className="animate-pulse space-y-4">
+          <div className="h-4 bg-slate-200 rounded w-1/4"></div>
+          <div className="h-10 bg-slate-200 rounded"></div>
+          <div className="h-32 bg-slate-200 rounded"></div>
+          <div className="grid grid-cols-2 gap-3">
+            <div className="h-10 bg-slate-200 rounded"></div>
+            <div className="h-10 bg-slate-200 rounded"></div>
+          </div>
+          <div className="grid grid-cols-2 gap-3">
+            <div className="h-10 bg-slate-200 rounded"></div>
+            <div className="h-10 bg-slate-200 rounded"></div>
+          </div>
+          <div className="grid grid-cols-2 gap-3">
+            <div className="h-10 bg-slate-200 rounded"></div>
+            <div className="h-10 bg-slate-200 rounded"></div>
+          </div>
+          <div className="h-12 bg-slate-200 rounded"></div>
+        </div>
+      </div>
+    );
+  }
+
+  // Helper: format Date to "YYYY-MM-DDTHH:mm:ss" (local)
+  function toLocalInputValue(d: Date) {
+    const pad = (n: number) => String(n).padStart(2, "0");
+    return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(
+      d.getDate()
+    )}T${pad(d.getHours())}:${pad(d.getMinutes())}:${pad(d.getSeconds())}`;
+  }
+
+  // Upload file to backend API
   async function uploadToTempStorage(file: File): Promise<string> {
     setUploading(true);
     setMsg("🔄 Uploading file to temporary storage...");
@@ -87,13 +260,10 @@ export default function PublishForm() {
         throw new Error(errorData.error || "Failed to upload file");
       }
 
-      const { tempKey, fileUrl, message } = await response.json();
+      const { tempKey, fileUrl } = await response.json();
 
       setMsg("✅ File uploaded successfully!");
-      setMediaUrl(fileUrl); // Set the S3 URL for preview/validation
-
-      console.log("🔑 Temp key generated:", tempKey);
-      console.log("📁 File URL:", fileUrl);
+      setMediaUrl(fileUrl);
 
       return tempKey;
     } catch (error) {
@@ -102,7 +272,6 @@ export default function PublishForm() {
           error instanceof Error ? error.message : "Unknown error"
         }`
       );
-      console.error("Upload error:", error);
       throw error;
     } finally {
       setUploading(false);
@@ -111,7 +280,7 @@ export default function PublishForm() {
 
   // Form validation function
   const validateForm = () => {
-    setMsg(""); // Clear previous messages
+    setMsg("");
 
     if (!led) {
       setMsg("Please select an LED display.");
@@ -119,7 +288,6 @@ export default function PublishForm() {
     }
 
     if (!tempKey) {
-      // Check for tempKey instead of mediaUrl
       setMsg("Please upload a media file.");
       return false;
     }
@@ -154,39 +322,14 @@ export default function PublishForm() {
       return false;
     }
 
+    // Check for time conflicts
+    if (hasConflict) {
+      setMsg(conflictMessage);
+      return false;
+    }
+
     return true;
   };
-
-  // Check if form is valid for checkout
-  const isFormValid = useMemo(() => {
-    return (
-      led &&
-      tempKey && // Check for tempKey instead of mediaUrl
-      !uploading &&
-      start &&
-      end &&
-      new Date(end) > new Date(start) &&
-      duration > 0 &&
-      totalCost > 0
-    );
-  }, [led, tempKey, uploading, start, end, duration, totalCost]);
-
-  // For images: duration = end - start (seconds)
-  useEffect(() => {
-    if (type !== "image") return;
-    if (!start || !end) return setDuration(0);
-    const s = new Date(start).getTime();
-    const e = new Date(end).getTime();
-    const secs = Math.round((e - s) / 1000);
-    setDuration(secs > 0 ? secs : 0);
-  }, [type, start, end]);
-
-  // Cleanup preview URL
-  useEffect(() => {
-    return () => {
-      if (previewUrl) URL.revokeObjectURL(previewUrl);
-    };
-  }, [previewUrl]);
 
   function openFileDialog() {
     if (!uploading) {
@@ -203,14 +346,6 @@ export default function PublishForm() {
     setDuration(0);
     setTempKey("");
     setMsg("");
-  }
-
-  // Helper: format Date to "YYYY-MM-DDTHH:mm:ss" (local)
-  function toLocalInputValue(d: Date) {
-    const pad = (n: number) => String(n).padStart(2, "0");
-    return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(
-      d.getDate()
-    )}T${pad(d.getHours())}:${pad(d.getMinutes())}:${pad(d.getSeconds())}`;
   }
 
   // Helper: read duration from a video File via metadata
@@ -281,9 +416,7 @@ export default function PublishForm() {
           setDuration(0);
         }
       }
-    } catch (error) {
-      console.error("Upload error:", error);
-      // Reset file state if upload fails
+    } catch {
       setMediaFile(null);
       setType("");
       if (previewUrl) URL.revokeObjectURL(previewUrl);
@@ -302,7 +435,7 @@ export default function PublishForm() {
     e.stopPropagation();
     setDragOver(false);
     if (!uploading) {
-      void pickFile(e.dataTransfer.files?.[0]); // This will trigger upload API
+      void pickFile(e.dataTransfer.files?.[0]);
     }
   }
 
@@ -318,17 +451,37 @@ export default function PublishForm() {
     setDragOver(false);
   }
 
-  // If type is video and user changes start, auto-move end = start + video duration
-  useEffect(() => {
-    if (type !== "video") return;
-    if (!start || !duration) return;
-    const s = new Date(start);
-    const e = new Date(s.getTime() + duration * 1000);
-    setEnd(toLocalInputValue(e));
-  }, [type, start, duration]);
+  // ✅ Manual LED refresh function
+  const refreshLEDs = async () => {
+    try {
+      setLoadingLEDs(true);
+      setLedError(null);
+
+      const response = await fetch("/api/led", {
+        method: "GET",
+        headers: {
+          "Content-Type": "application/json",
+        },
+      });
+
+      if (!response.ok) {
+        throw new Error(`Failed to fetch LEDs: ${response.status}`);
+      }
+
+      const data = await response.json();
+      const ledsArray = Array.isArray(data) ? data : data.leds || [];
+      setLeds(ledsArray);
+    } catch (err) {
+      const errorMessage = err instanceof Error ? err.message : "Unknown error";
+      setLedError(errorMessage);
+    } finally {
+      setLoadingLEDs(false);
+    }
+  };
 
   return (
     <div className="space-y-4 rounded-lg border border-slate-200 bg-white p-4 dark:border-slate-800 dark:bg-slate-900">
+      {/* ✅ UPDATED LED SELECT SECTION */}
       <div>
         <label htmlFor="led-select" className="block text-sm font-medium">
           LED
@@ -337,14 +490,121 @@ export default function PublishForm() {
           id="led-select"
           value={led}
           onChange={(e) => setLed(e.target.value)}
-          className="mt-1 w-full rounded-md border border-slate-300 px-3 py-2 dark:border-slate-700 dark:bg-slate-800"
+          disabled={loadingLEDs}
+          className="mt-1 w-full rounded-md border border-slate-300 px-3 py-2 dark:border-slate-700 dark:bg-slate-800 disabled:opacity-50"
         >
-          <option value="">Select one</option>
-          {/* Fake options (replace with fetched data) */}
-          <option value="68ac276f23e137f1bb2fbf42">LED A</option>
-          <option value="68ac276f23e137f1bb2fbf42">LED B</option>
+          <option value="">
+            {loadingLEDs ? "Loading LEDs..." : "Select one"}
+          </option>
+
+          {/* ✅ Map through fetched LEDs */}
+          {leds
+            .filter((ledOption) => ledOption.status === "active") // Only show active LEDs
+            .map((ledOption) => (
+              <option key={ledOption._id} value={ledOption._id}>
+                {ledOption.name} - {ledOption.location} ({ledOption.screenSize})
+              </option>
+            ))}
         </select>
+
+        {/* ✅ Show selected LED details */}
+        {led && leds.length > 0 && (
+          <div className="mt-2 p-2 bg-blue-50 rounded border border-blue-200 dark:bg-blue-900/20 dark:border-blue-800">
+            {(() => {
+              const selectedLED = leds.find((l) => l._id === led);
+              return selectedLED ? (
+                <div className="text-xs text-blue-700 dark:text-blue-300">
+                  <div className="flex justify-between items-center">
+                    <span>📺 {selectedLED.name}</span>
+                    <span>📐 {selectedLED.screenSize}</span>
+                  </div>
+                  <div className="mt-1 text-blue-600 dark:text-blue-400">
+                    📍 {selectedLED.location} • Status: {selectedLED.status}
+                  </div>
+                </div>
+              ) : (
+                <div className="text-xs text-red-600">
+                  LED not found in data
+                </div>
+              );
+            })()}
+          </div>
+        )}
       </div>
+
+      {/* Display booked ranges for selected LED */}
+      {led && (
+        <div className="rounded-md bg-yellow-50 border border-yellow-200 dark:bg-yellow-900/20 dark:border-yellow-800">
+          <div className="flex items-center justify-between p-3 border-b border-yellow-200 dark:border-yellow-700">
+            <h4 className="text-sm font-medium text-yellow-800 dark:text-yellow-200">
+              📅 Currently Booked Time Slots
+            </h4>
+            <div className="flex items-center gap-2">
+              {lastUpdated && (
+                <span className="text-xs text-yellow-600">
+                  {lastUpdated.toLocaleTimeString()}
+                </span>
+              )}
+              <button
+                onClick={refreshBookedRanges}
+                disabled={loadingBookedRanges}
+                className="text-xs text-yellow-600 hover:text-yellow-700 disabled:opacity-50"
+              >
+                🔄 Refresh
+              </button>
+            </div>
+          </div>
+
+          {/* FIXED HEIGHT SCROLLABLE AREA */}
+          <div className="h-48 overflow-y-auto p-3">
+            {loadingBookedRanges ? (
+              <div className="flex items-center justify-center h-full">
+                <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-yellow-600"></div>
+                <span className="ml-2 text-sm text-yellow-600">Loading...</span>
+              </div>
+            ) : bookedRanges.length === 0 ? (
+              <div className="flex items-center justify-center h-full text-yellow-600">
+                <span className="text-sm">
+                  ✅ No bookings found - all times available!
+                </span>
+              </div>
+            ) : (
+              <div className="space-y-2">
+                {bookedRanges.map((range, index) => {
+                  const startTime = new Date(range.start);
+                  const endTime = new Date(range.end);
+                  const rangeDuration = Math.round(
+                    (endTime.getTime() - startTime.getTime()) / 1000
+                  );
+
+                  return (
+                    <div
+                      key={range.id || index}
+                      className="flex justify-between items-center py-2 px-3 bg-white rounded border dark:bg-slate-800 dark:border-slate-700"
+                    >
+                      <div className="font-mono text-sm text-slate-700 dark:text-slate-300">
+                        {formatDateForDisplay(range.start)}
+                        <span className="text-slate-500 mx-2">→</span>
+                        {formatDateForDisplay(range.end)}
+                      </div>
+                      <div className="text-xs text-slate-600 dark:text-slate-400">
+                        {rangeDuration}s
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            )}
+          </div>
+
+          <div className="px-3 pb-3">
+            <p className="text-xs text-yellow-600 dark:text-yellow-400">
+              ⚠️ Please choose a time that doesn&apos;t overlap with these
+              bookings
+            </p>
+          </div>
+        </div>
+      )}
 
       <div>
         <label className="block text-sm font-medium">Media (image/video)</label>
@@ -471,7 +731,11 @@ export default function PublishForm() {
             min={minLocal}
             value={start}
             onChange={(e) => setStart(e.target.value)}
-            className="mt-1 w-full rounded-md border border-slate-300 px-3 py-2 dark:border-slate-700 dark:bg-slate-800"
+            className={`mt-1 w-full rounded-md border px-3 py-2 dark:border-slate-700 dark:bg-slate-800 ${
+              hasConflict
+                ? "border-red-300 bg-red-50 dark:border-red-700 dark:bg-red-900/20"
+                : "border-slate-300"
+            }`}
           />
         </div>
         <div>
@@ -487,6 +751,8 @@ export default function PublishForm() {
             className={`mt-1 w-full rounded-md border px-3 py-2 dark:border-slate-700 dark:bg-slate-800 ${
               type === "video"
                 ? "bg-slate-50 cursor-not-allowed"
+                : hasConflict
+                ? "border-red-300 bg-red-50 dark:border-red-700 dark:bg-red-900/20"
                 : "border-slate-300"
             }`}
           />
@@ -521,17 +787,20 @@ export default function PublishForm() {
         </div>
       </div>
 
-      {msg && (
+      {/* Show conflict message or regular message */}
+      {(msg || conflictMessage) && (
         <p
           className={`text-sm ${
-            msg.includes("✅") || msg.includes("successfully")
+            conflictMessage
+              ? "text-orange-600"
+              : msg.includes("✅") || msg.includes("successfully")
               ? "text-green-600"
               : msg.includes("🔄") || msg.includes("Uploading")
               ? "text-yellow-600"
               : "text-red-600"
           }`}
         >
-          {msg}
+          {conflictMessage || msg}
         </p>
       )}
 

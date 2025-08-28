@@ -4,7 +4,7 @@ import Image from "next/image";
 import { useEffect, useState } from "react";
 import Login from "./common/Login";
 import Cookies from "js-cookie";
-import { useStore } from "@/lib/zustance";
+import { useStore } from "../utils/zustance";
 import { UserPayload } from "../types/UserPayload";
 import { jwtDecode } from "jwt-decode";
 import Link from "next/link";
