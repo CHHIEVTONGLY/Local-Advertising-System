@@ -12,6 +12,7 @@ const {
   uploadTempFile,
   moveFileToPermanent,
   cleanupTempFile,
+  getBookedRanges,
 } = require("../Controller/AdsController");
 
 router.get("/all", getAds);
@@ -22,5 +23,7 @@ router.put("/review/:adsId", requireAuth, reviewAds);
 router.post("/upload-temp", requireAuth, upload.single("file"), uploadTempFile);
 router.post("/move-to-permanent", moveFileToPermanent);
 router.post("/cleanup-temp", cleanupTempFile);
+
+router.get("/book-ranges", getBookedRanges);
 
 module.exports = router;
