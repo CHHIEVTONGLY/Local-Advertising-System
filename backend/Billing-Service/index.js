@@ -8,6 +8,7 @@ const { requireAuth } = require("./Middleware/verifyToken");
 
 const walletRoutes = require("./Router/walletRoutes");
 const transactionRoutes = require("./Router/transactionRoutes");
+const adsTransactionRoutes = require("./Router/adsTransactionRoutes");
 
 const uri = process.env.MONGODB_URI;
 const PORT = process.env.PORT || 4000;
@@ -25,6 +26,7 @@ app.get("/", (req, res) => {
 
 app.use("/api/wallets", requireAuth, walletRoutes);
 app.use("/api/transactions", requireAuth, transactionRoutes);
+app.use("/api/ads-transactions", requireAuth, adsTransactionRoutes);
 
 mongoose.connect(uri).then(() => {
   console.log("MongoDB connected successfully");
