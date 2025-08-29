@@ -178,6 +178,32 @@ const reviewAds = asyncHandler(async (req, res) => {
   }
 });
 
+// Check if a time slot conflicts with existing approved ads
+const getBookedRanges = asyncHandler(async (req, res) => {
+  try {
+    const { led } = req.query;
+    if (!led) return res.status(400).json({ message: "LED is required" });
+
+    const now = new Date();
+    // Fetch all approved + paid ads that are starting now or in the future
+    const bookedAds = await Ads.find({
+      led,
+      reviewStatus: "approved",
+      billingStatus: "paid",
+      "displayTime.endTime": { $gte: now },
+    }).sort("displayTime.startTime");
+
+    const bookedRanges = bookedAds.map((ad) => ({
+      start: ad.displayTime.startTime,
+      end: ad.displayTime.endTime,
+    }));
+
+    res.status(200).json({ bookedRanges });
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+});
+
 const uploadTempFile = asyncHandler(async (req, res) => {
   const file = req.file;
   const user = req.user.id;
@@ -398,4 +424,5 @@ module.exports = {
   uploadTempFile,
   moveFileToPermanent,
   cleanupTempFile,
+  getBookedRanges,
 };
