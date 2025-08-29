@@ -106,7 +106,7 @@ export function useTimeValidation({
   // Initial fetch when LED changes
   useEffect(() => {
     fetchRanges(true);
-  }, [ledId]);
+  }, [ledId, fetchRanges]);
 
   // Smart refresh on time changes
   useEffect(() => {
@@ -118,7 +118,7 @@ export function useTimeValidation({
     }, 2000);
 
     return () => clearTimeout(timeoutId);
-  }, [startTime, endTime, fetchRanges]);
+  }, [ledId, startTime, endTime, fetchRanges]);
 
   // OPTIONAL: Gentle background refresh when user is likely submitting
   useEffect(() => {

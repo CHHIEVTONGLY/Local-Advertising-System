@@ -38,7 +38,6 @@ export default function PublishForm() {
   // ✅ LED State
   const [leds, setLeds] = useState<LED[]>([]);
   const [loadingLEDs, setLoadingLEDs] = useState(true);
-  const [ledError, setLedError] = useState<string | null>(null);
 
   // Drag & drop state
   const [mediaFile, setMediaFile] = useState<File | null>(null);
@@ -58,7 +57,6 @@ export default function PublishForm() {
     const fetchLEDs = async () => {
       try {
         setLoadingLEDs(true);
-        setLedError(null);
 
         const response = await fetch("/api/led", {
           method: "GET",
@@ -76,28 +74,8 @@ export default function PublishForm() {
         // Handle the response (your API returns array directly)
         const ledsArray = Array.isArray(data) ? data : data.leds || [];
         setLeds(ledsArray);
-      } catch (err) {
-        const errorMessage =
-          err instanceof Error ? err.message : "Unknown error";
-        setLedError(errorMessage);
-
-        // Fallback to hardcoded data during development
-        setLeds([
-          {
-            _id: "68ac276f23e137f1bb2fbf42",
-            name: "LED A",
-            location: "Fallback",
-            screenSize: "1280x960",
-            status: "active",
-          },
-          {
-            _id: "68ac276f23e137f1bb2fbf43",
-            name: "LED B",
-            location: "Fallback",
-            screenSize: "1280x960",
-            status: "active",
-          },
-        ]);
+      } catch {
+        console.error("Failed to fetch LEDs");
       } finally {
         setLoadingLEDs(false);
       }
@@ -144,6 +122,7 @@ export default function PublishForm() {
   const adData = useMemo(
     () => ({
       ledId: led,
+      mediaUrl,
       tempKey,
       fileName: mediaFile?.name || "",
       type,
@@ -157,6 +136,7 @@ export default function PublishForm() {
     }),
     [
       led,
+      mediaUrl,
       tempKey,
       mediaFile?.name,
       type,
@@ -451,34 +431,6 @@ export default function PublishForm() {
     setDragOver(false);
   }
 
-  // ✅ Manual LED refresh function
-  const refreshLEDs = async () => {
-    try {
-      setLoadingLEDs(true);
-      setLedError(null);
-
-      const response = await fetch("/api/led", {
-        method: "GET",
-        headers: {
-          "Content-Type": "application/json",
-        },
-      });
-
-      if (!response.ok) {
-        throw new Error(`Failed to fetch LEDs: ${response.status}`);
-      }
-
-      const data = await response.json();
-      const ledsArray = Array.isArray(data) ? data : data.leds || [];
-      setLeds(ledsArray);
-    } catch (err) {
-      const errorMessage = err instanceof Error ? err.message : "Unknown error";
-      setLedError(errorMessage);
-    } finally {
-      setLoadingLEDs(false);
-    }
-  };
-
   return (
     <div className="space-y-4 rounded-lg border border-slate-200 bg-white p-4 dark:border-slate-800 dark:bg-slate-900">
       {/* ✅ UPDATED LED SELECT SECTION */}
@@ -492,6 +444,7 @@ export default function PublishForm() {
           onChange={(e) => setLed(e.target.value)}
           disabled={loadingLEDs}
           className="mt-1 w-full rounded-md border border-slate-300 px-3 py-2 dark:border-slate-700 dark:bg-slate-800 disabled:opacity-50"
+          title="Select an LED display"
         >
           <option value="">
             {loadingLEDs ? "Loading LEDs..." : "Select one"}
@@ -711,6 +664,8 @@ export default function PublishForm() {
             type="number"
             readOnly
             value={duration || ""}
+            placeholder="Duration in seconds"
+            title="Duration in seconds"
             className="mt-1 w-full rounded-md border border-slate-300 bg-slate-50 px-3 py-2 dark:border-slate-700 dark:bg-slate-800"
           />
           <p className="mt-1 text-xs text-slate-500">
@@ -773,15 +728,16 @@ export default function PublishForm() {
             disabled
             value={pricePerSecond}
             onChange={(e) => setPricePerSecond(Number(e.target.value))}
+            placeholder="Price per second"
             className="mt-1 w-full rounded-md border bg-slate-50 border-slate-300 px-3 py-2 dark:border-slate-700 dark:bg-slate-800 hover:cursor-not-allowed"
           />
         </div>
         <div>
-          <label className="block text-sm font-medium">Total cost</label>
           <input
             aria-label="Total cost"
             readOnly
             value={totalCost}
+            placeholder="Total cost"
             className="mt-1 w-full cursor-not-allowed rounded-md border border-slate-300 bg-slate-50 px-3 py-2 dark:border-slate-700 dark:bg-slate-800"
           />
         </div>

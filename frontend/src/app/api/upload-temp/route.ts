@@ -50,14 +50,12 @@ export async function POST(req: NextRequest) {
     console.log("✅ File uploaded successfully");
 
     return NextResponse.json(response.data);
-  } catch (err: any) {
-    console.error("❌ Upload error:", err.response?.data || err.message);
-
+  } catch {
     return NextResponse.json(
       {
-        error: err.response?.data?.message || err.message || "Upload failed",
+        error: "Upload failed",
       },
-      { status: err.response?.status || 500 }
+      { status: 500 }
     );
   }
 }
