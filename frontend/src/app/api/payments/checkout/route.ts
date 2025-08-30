@@ -38,10 +38,9 @@ export async function POST(req: NextRequest) {
       orderId,
       adData: JSON.stringify(adData), // Store form data
       userToken: userToken || "", // Store user token
+      adTitle,
     },
   });
-
-  console.log("✅ Checkout - Session created:", session.id);
 
   return NextResponse.json({ sessionId: session.id, url: session.url });
 }

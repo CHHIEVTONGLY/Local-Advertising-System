@@ -1,7 +1,7 @@
-// Create: /frontend/src/app/api/upload-temp/route.ts
 import type { NextRequest } from "next/server";
 import { NextResponse } from "next/server";
 import axios from "axios";
+import crypto from "crypto";
 
 const adsServiceUrl = process.env.ADS_SERVICE_URL;
 
@@ -24,16 +24,29 @@ export async function POST(req: NextRequest) {
       );
     }
 
+    // ✅ CREATE ULTRA-SHORT FILENAME
+    const originalFileName = file.name;
+    const extension = originalFileName.split(".").pop() || "";
+
+    // Generate 6-character hash for ultra-short filename
+    const hash = crypto
+      .createHash("md5")
+      .update(originalFileName + Date.now())
+      .digest("hex")
+      .substring(0, 6); // Only 6 characters!
+
+    const shortFileName = `${hash}.${extension}`;
+
     // Convert file to buffer for backend
     const arrayBuffer = await file.arrayBuffer();
     const buffer = Buffer.from(arrayBuffer);
 
-    // Create FormData for backend
+    // ✅ CREATE FORMDATA WITH SHORT FILENAME
     const backendFormData = new FormData();
     const blob = new Blob([buffer], { type: file.type });
-    backendFormData.append("file", blob, file.name);
-
-    console.log("🚀 Uploading file to backend:", file.name);
+    backendFormData.append("file", blob, shortFileName); // ✅ Use ultra-short filename
+    backendFormData.append("originalFileName", originalFileName); // ✅ Send original for reference
+    backendFormData.append("useUltraShortPath", "true"); // ✅ Signal backend for shortest path
 
     // Call backend upload endpoint
     const response = await axios.post(
@@ -47,13 +60,25 @@ export async function POST(req: NextRequest) {
       }
     );
 
-    console.log("✅ File uploaded successfully");
+    // ✅ RETURN ENHANCED RESPONSE WITH SHORT FILENAMES
+    return NextResponse.json({
+      ...response.data,
+      shortFileName: shortFileName,
+      originalFileName: originalFileName,
+    });
+  } catch (error) {
+    console.error("❌ Upload error:", error);
 
-    return NextResponse.json(response.data);
-  } catch {
+    // Better error logging
+    if (axios.isAxiosError(error)) {
+      console.error("Backend error:", error.response?.data);
+      console.error("Backend status:", error.response?.status);
+    }
+
     return NextResponse.json(
       {
         error: "Upload failed",
+        details: error instanceof Error ? error.message : "Unknown error",
       },
       { status: 500 }
     );

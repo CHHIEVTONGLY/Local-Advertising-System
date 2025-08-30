@@ -1,5 +1,7 @@
 // Update your types file to include tempKey
 export interface AdsType {
+  _id: string;
+  title: string;
   ledId: string;
   mediaUrl?: string;
   tempKey: string;
@@ -10,6 +12,8 @@ export interface AdsType {
     startTime: string;
     endTime: string;
   };
+  reviewStatus: string;
+  led: string;
   pricePerSecond: number;
   totalCost: number;
   status?: string;

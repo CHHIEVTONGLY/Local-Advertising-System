@@ -33,15 +33,16 @@ export async function POST(request: NextRequest) {
       const adData = JSON.parse(session.metadata?.adData || "{}");
       const userToken = session.metadata?.userToken ?? "";
       const orderId = session.metadata?.orderId ?? "";
-
-      console.log("📋 Processing payment for:", {
-        orderId,
-        tempKey: adData.tempKey,
-        fileName: adData.fileName,
-      });
+      const adTitle = session.metadata?.adTitle ?? "";
 
       // Handle the successful payment with file moving
-      await handleSuccessfulPayment(adData, userToken, orderId, session.id);
+      await handleSuccessfulPayment(
+        adData,
+        adTitle,
+        userToken,
+        orderId,
+        session.id
+      );
     }
   }
 
@@ -50,6 +51,7 @@ export async function POST(request: NextRequest) {
 
 async function handleSuccessfulPayment(
   adData: AdsType,
+  adTitle: string,
   userToken: string,
   orderId: string,
   sessionId: string
@@ -78,9 +80,6 @@ async function handleSuccessfulPayment(
     }
 
     const permanentMediaUrl = moveFileResponse.data.mediaUrl;
-    console.log("✅ File moved successfully to:", permanentMediaUrl);
-
-    console.log("🔄 Step 2: Creating ad record...");
 
     // Step 2: Create the ad with permanent URL
     const createAdResponse = await fetch(
@@ -92,6 +91,7 @@ async function handleSuccessfulPayment(
           Authorization: `Bearer ${userToken}`,
         },
         body: JSON.stringify({
+          title: adTitle,
           mediaUrl: permanentMediaUrl,
           type: adData.type,
           duration: adData.duration,
@@ -126,8 +126,7 @@ async function handleSuccessfulPayment(
       return;
     }
 
-    const adResult = await createAdResponse.json();
-    console.log(adResult);
+    await createAdResponse.json();
   } catch (error) {
     console.error("❌ Error in payment processing:", error);
 
@@ -141,8 +140,6 @@ async function handleSuccessfulPayment(
 // Helper function to cleanup temp files if something goes wrong
 async function cleanupTempFile(tempKey: string) {
   try {
-    console.log("🗑️ Cleaning up temp file:", tempKey);
-
     await axios.post(
       `${adsServiceUrl}/api/ads/cleanup-temp`,
       { tempKey },
@@ -152,8 +149,6 @@ async function cleanupTempFile(tempKey: string) {
         },
       }
     );
-
-    console.log("✅ Temp file cleaned up successfully");
   } catch (error) {
     console.error("❌ Failed to cleanup temp file:", error);
   }
