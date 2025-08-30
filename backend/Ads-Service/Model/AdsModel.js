@@ -2,6 +2,7 @@ const mongoose = require("mongoose");
 const Schema = mongoose.Schema;
 const Ads = new Schema(
   {
+    title: { type: String, required: true },
     publisherId: { type: String, required: true },
     led: { type: Schema.Types.ObjectId, ref: "LED", required: true },
     mediaUrl: { type: String, required: true },

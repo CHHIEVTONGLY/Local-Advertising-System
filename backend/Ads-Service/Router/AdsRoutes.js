@@ -7,6 +7,7 @@ const upload = require("../Middleware/upload");
 const {
   getAds,
   getAdsAdmin,
+  getUserAds,
   reviewAds,
   createAds,
   uploadTempFile,
@@ -16,6 +17,7 @@ const {
 } = require("../Controller/AdsController");
 
 router.get("/all", getAds);
+router.get("/me", requireAuth, getUserAds);
 router.get("/admin", requireAdmin, getAdsAdmin);
 router.post("/create/:led", requireAuth, createAds);
 router.put("/review/:adsId", requireAuth, reviewAds);
