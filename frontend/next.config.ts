@@ -7,6 +7,14 @@ const nextConfig: NextConfig = {
         protocol: "https",
         hostname: "globaladvertisingstorage.s3.ap-southeast-2.amazonaws.com",
       },
+      {
+        protocol: "https",
+        hostname: "globaladvertisingstorage.s3.amazonaws.com",
+      },
+      {
+        protocol: "https",
+        hostname: "globaladvertisingstorage.s3-ap-southeast-2.amazonaws.com",
+      },
     ],
   },
 };

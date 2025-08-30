@@ -733,6 +733,7 @@ export default function PublishForm() {
           />
         </div>
         <div>
+          <label className="block text-sm font-medium">Total Cost</label>
           <input
             aria-label="Total cost"
             readOnly
