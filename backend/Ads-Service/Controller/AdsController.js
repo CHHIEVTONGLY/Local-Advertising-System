@@ -2,6 +2,35 @@ const Ads = require("../Model/AdsModel");
 const asyncHandler = require("express-async-handler");
 const s3 = require("../utils/s3");
 
+const getUserAds = asyncHandler(async (req, res) => {
+  try {
+    const publisherId = req.user.id;
+    const { q, page = "1", limit = "20", sort = "-createdAt" } = req.query;
+
+    const filter = { publisherId };
+    if (q) filter.title = { $regex: String(q), $options: "i" };
+
+    const pageNum = Math.max(parseInt(page, 10) || 1, 1);
+    const limitNum = Math.min(Math.max(parseInt(limit, 10) || 20, 1), 100);
+    const skip = (pageNum - 1) * limitNum;
+
+    const [ads, total] = await Promise.all([
+      Ads.find(filter).sort(sort).skip(skip).limit(limitNum),
+      Ads.countDocuments(filter),
+    ]);
+
+    res.status(200).send({
+      message: "OK",
+      data: ads,
+      total,
+      page: pageNum,
+      pages: Math.ceil(total / limitNum),
+    });
+  } catch (error) {
+    res.status(500).send({ message: error.message });
+  }
+});
+
 const getAds = asyncHandler(async (req, res) => {
   try {
     const {
@@ -85,6 +114,7 @@ const createAds = asyncHandler(async (req, res) => {
   try {
     const { led } = req.params;
     const {
+      title,
       mediaUrl,
       type = "image",
       duration,
@@ -97,6 +127,7 @@ const createAds = asyncHandler(async (req, res) => {
     const publisherId = req.user.id;
 
     if (
+      !title ||
       !mediaUrl ||
       !duration ||
       !displayTime?.startTime ||
@@ -137,6 +168,7 @@ const createAds = asyncHandler(async (req, res) => {
     }
 
     const ad = await Ads.create({
+      title,
       publisherId,
       led,
       mediaUrl,
@@ -418,6 +450,7 @@ function getContentType(fileName) {
 
 module.exports = {
   getAds,
+  getUserAds,
   getAdsAdmin,
   reviewAds,
   createAds,

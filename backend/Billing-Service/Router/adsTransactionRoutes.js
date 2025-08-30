@@ -7,6 +7,6 @@ const {
 } = require("../Controller/adsTransactionController");
 
 router.post("/create", createAdsTransaction);
-router.get("/:publisherId", getTransactionsByUser);
+router.get("/me", getTransactionsByUser);
 
 module.exports = router;

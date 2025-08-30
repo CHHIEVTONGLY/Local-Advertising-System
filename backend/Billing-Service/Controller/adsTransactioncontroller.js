@@ -21,7 +21,7 @@ const createAdsTransaction = asyncHandler(async (req, res) => {
 
 const getTransactionsByUser = asyncHandler(async (req, res) => {
   try {
-    const { publisherId } = req.params;
+    const publisherId = req.user.id;
     if (!publisherId) {
       return res.status(400).json({ message: "publisherId is required" });
     }
