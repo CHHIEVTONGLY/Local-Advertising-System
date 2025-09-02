@@ -49,7 +49,8 @@ const getAds = asyncHandler(async (req, res) => {
 
     // Only include ads that start now or in the future
     const now = new Date();
-    filter["displayTime.startTime"] = { $gte: now };
+    filter["displayTime.startTime"] = { $lte: now };
+    filter["displayTime.endTime"] = { $gt: now };
 
     const pageNum = Math.max(parseInt(page, 10) || 1, 1);
     const limitNum = Math.min(Math.max(parseInt(limit, 10) || 20, 1), 100);

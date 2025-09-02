@@ -9,6 +9,7 @@ const fileFilter = (req, file, cb) => {
     "image/png",
     "image/jpg",
     "image/webp",
+    "image/gif",
 
     // Video types
     "video/mp4",
