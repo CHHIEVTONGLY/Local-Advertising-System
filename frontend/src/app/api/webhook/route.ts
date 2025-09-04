@@ -112,6 +112,23 @@ async function handleSuccessfulPayment(
       const errorText = await createAdResponse.text();
       console.error("❌ Error response:", errorText);
 
+      // Refund to user
+      const response = await axios.post(
+        `${process.env.BILLING_SERVICE_URL}/api/wallets/deposit`,
+        {
+          amount: adData.totalCost,
+          type: "refund",
+        },
+        {
+          headers: {
+            "x-wallet-key": process.env.SECRET_WALLET_KEY,
+            Authorization: `Bearer ${userToken}`,
+          },
+        }
+      );
+
+      console.log(response);
+
       // If ad creation fails, we should clean up the permanent file
       await cleanupPermanentFile(permanentMediaUrl);
       return;

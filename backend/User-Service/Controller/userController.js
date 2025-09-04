@@ -8,9 +8,11 @@ const fs = require("fs").promises;
 const { OAuth2Client } = require("google-auth-library");
 const client = new OAuth2Client(process.env.GOOGLE_CLIENT_ID);
 const s3 = require("../utils/s3");
+const axios = require("axios");
 
 const registerUser = asyncHandler(async (req, res) => {
   const { name, email, password, company, contact } = req.body;
+  let walletCreate = "";
 
   const passwordRegex = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d).{8,}$/;
   if (!passwordRegex.test(password)) {
@@ -32,7 +34,8 @@ const registerUser = asyncHandler(async (req, res) => {
     name,
     email,
     password: hashedPassword,
-    profileUrl: "",
+    profileUrl:
+      "https://globaladvertisingstorage.s3.ap-southeast-2.amazonaws.com/profiles/default_avatar.jpg",
     company: company || "",
     contact: contact || "",
   });
@@ -43,12 +46,32 @@ const registerUser = asyncHandler(async (req, res) => {
   }
   saveUser.password = "";
 
+  try {
+    const response = await axios.post(
+      `${process.env.BILLING_SERVICE_URL}/api/wallets/create`,
+      { userId: saveUser._id },
+      {
+        headers: {
+          "x-create-wallet-key": process.env.SECRET_CREATE_WALLET_KEY,
+        },
+      }
+    );
+    if (response.data.success) {
+      walletCreate = "Wallet Created";
+    } else {
+      walletCreate = "Failed to Create Wallet";
+    }
+  } catch (err) {
+    console.error("Error creating user wallet:", err.message);
+  }
+
   res.status(201).json({
     success: true,
     message: "User registered successfully",
     id: saveUser._id,
     email: saveUser.email,
     role: saveUser.role,
+    wallet: walletCreate,
   });
 });
 

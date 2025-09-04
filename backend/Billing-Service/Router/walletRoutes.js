@@ -10,7 +10,7 @@ const {
 } = require("../Controller/walletController");
 
 router.get("/me", requireAuth, getWallet);
-router.post("/create", requireAuth, createWallet);
+router.post("/create", createWallet);
 router.post("/deposit", requireAuth, deposit);
 router.post("/deduct", requireAuth, deduct);
 
