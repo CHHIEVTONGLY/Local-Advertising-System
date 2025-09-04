@@ -15,6 +15,7 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import WalletDisplay from "./common/WalletDisplay";
 
 export default function NavigationBar() {
   const [login, setLogin] = useState(false);
@@ -58,6 +59,14 @@ export default function NavigationBar() {
             <h1 className="text-lg font-semibold">Global Advertising</h1>
           </div>
           <div className="flex items-center gap-2">
+            {/* Wallet Display */}
+            <Link
+              href="/publish"
+              className="rounded-md px-3 py-2 text-sm font-semibold bg-blue-600 text-white hover:bg-blue-700 transition"
+            >
+              Publish Ad
+            </Link>
+            {avatarUrl && <WalletDisplay />}
             <ThemeToggle />
             {avatarUrl ? (
               <DropdownMenu>
@@ -87,7 +96,7 @@ export default function NavigationBar() {
                       </p>
                     </div>
 
-                    <Link href="/profile">
+                    <Link href="/dashboard">
                       <DropdownMenuItem className="cursor-pointer px-4 py-2 hover:bg-gray-100 dark:hover:bg-gray-800 focus:bg-gray-100 dark:focus:bg-gray-800">
                         <svg
                           className="mr-2 h-4 w-4"
@@ -102,7 +111,7 @@ export default function NavigationBar() {
                             d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"
                           />
                         </svg>
-                        My Profile
+                        My Dashboard
                       </DropdownMenuItem>
                     </Link>
 

@@ -39,7 +39,7 @@ export default function DebugWebSocket() {
   const activeAds = Object.entries(activeAdsByLed);
 
   return (
-    <div className="grid grid-cols-1 md:grid-cols-2 gap-6 w-screen min-h-screen text-black p-4">
+    <div className="grid grid-cols-1 md:grid-cols-2 gap-1 max-w-7xl mx-auto w-screen min-h-screen text-black py-4 ">
       {activeAds.length > 0 ? (
         activeAds.map(([led, ad]) => (
           <div
@@ -71,7 +71,7 @@ export default function DebugWebSocket() {
           </div>
         ))
       ) : (
-        <p>No ad is active right now</p>
+        <p>No active ads found</p>
       )}
     </div>
   );

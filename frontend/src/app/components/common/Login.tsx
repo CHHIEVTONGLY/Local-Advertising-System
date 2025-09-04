@@ -73,8 +73,6 @@ export default function Login({ view, switchView, onClose }: LoginProps) {
         const token = response.data.token;
         Cookies.set("token", token, {
           expires: 7,
-          secure: true,
-          sameSite: "Strict",
         });
         login(token);
         const decodedToken: UserPayload = jwtDecode(token);
