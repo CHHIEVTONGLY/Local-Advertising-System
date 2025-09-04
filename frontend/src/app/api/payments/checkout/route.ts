@@ -6,18 +6,8 @@ const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, {
 });
 
 export async function POST(req: NextRequest) {
-  console.log("🚀 Checkout - Starting payment session");
-
   // Add adData and userToken here
   const { orderId, amount, adTitle, adData, userToken } = await req.json();
-
-  console.log("📦 Checkout - Received data:", {
-    orderId,
-    amount,
-    adTitle,
-    ledId: adData?.ledId,
-    hasUserToken: !!userToken,
-  });
 
   const session = await stripe.checkout.sessions.create({
     payment_method_types: ["card"],

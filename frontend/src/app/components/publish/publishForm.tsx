@@ -2,13 +2,14 @@
 
 import { useEffect, useMemo, useRef, useState } from "react";
 import Cookies from "js-cookie";
-import CheckoutButton from "../Stripe";
+import CheckoutButton from "../common/Checkout/Stripe";
 import Image from "next/image";
 import {
   formatDateForDisplay,
   calculateDuration,
 } from "../../utils/timeHelper";
 import { useTimeValidation } from "../../validation/timeValidation";
+import WalletCheckout from "../common/Checkout/WalletCheckout";
 
 type AdType = "image" | "video";
 
@@ -769,6 +770,18 @@ export default function PublishForm() {
         userToken={userToken}
         disabled={!isFormValid}
         onValidate={validateForm}
+      />
+      <WalletCheckout
+        orderId={`ad_${Date.now()}_${led}`}
+        amount={totalCost}
+        adTitle={`LED Advertisement - ${type} (${duration}s)`}
+        adData={adData}
+        userToken={userToken}
+        disabled={!isFormValid}
+        onValidate={validateForm}
+        onError={(msg) => {
+          setMsg(`❌ Payment failed : ${msg}`);
+        }}
       />
     </div>
   );

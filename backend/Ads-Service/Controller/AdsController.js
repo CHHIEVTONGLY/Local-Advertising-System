@@ -1,6 +1,7 @@
 const Ads = require("../Model/AdsModel");
 const asyncHandler = require("express-async-handler");
 const s3 = require("../utils/s3");
+const axios = require("axios");
 
 const getUserAds = asyncHandler(async (req, res) => {
   try {
@@ -49,7 +50,8 @@ const getAds = asyncHandler(async (req, res) => {
 
     // Only include ads that start now or in the future
     const now = new Date();
-    filter["displayTime.startTime"] = { $gte: now };
+    filter["displayTime.startTime"] = { $lte: now };
+    filter["displayTime.endTime"] = { $gt: now };
 
     const pageNum = Math.max(parseInt(page, 10) || 1, 1);
     const limitNum = Math.min(Math.max(parseInt(limit, 10) || 20, 1), 100);
@@ -126,15 +128,18 @@ const createAds = asyncHandler(async (req, res) => {
     } = req.body;
     const publisherId = req.user.id;
 
-    if (
-      !title ||
-      !mediaUrl ||
-      !duration ||
-      !displayTime?.startTime ||
-      !displayTime?.endTime ||
-      !pricePerSecond
-    ) {
-      return res.status(400).send({ message: "Missing required fields" });
+    const missingFields = [];
+    if (!title) missingFields.push("title");
+    if (!mediaUrl) missingFields.push("mediaUrl");
+    if (!duration) missingFields.push("duration");
+    if (!displayTime?.startTime) missingFields.push("displayTime.startTime");
+    if (!displayTime?.endTime) missingFields.push("displayTime.endTime");
+    if (!pricePerSecond) missingFields.push("pricePerSecond");
+
+    if (missingFields.length > 0) {
+      return res
+        .status(400)
+        .send({ message: "Missing required fields", missingFields });
     }
 
     const startTime = new Date(displayTime.startTime);
@@ -285,31 +290,14 @@ const moveFileToPermanent = asyncHandler(async (req, res) => {
   try {
     const { tempKey, fileName, orderId, sessionId } = req.body;
 
-    console.log("📋 Received move request:", {
-      tempKey,
-      fileName,
-      orderId,
-      sessionId,
-    });
-
     if (!tempKey || !fileName) {
       return res.status(400).json({
         message: "Missing required fields: tempKey, fileName",
       });
     }
 
-    console.log("📁 Moving file from temp to permanent:", tempKey);
-    console.log("🔧 Environment check:", {
-      bucket: process.env.AWS_BUCKET_NAME,
-      region: process.env.AWS_REGION,
-      hasAwsKey: !!process.env.AWS_ACCESS_KEY,
-      hasAwsSecret: !!process.env.AWS_SECRET_KEY,
-    });
-
     const timestamp = Date.now();
     const permanentKey = `ads/${timestamp}-${orderId || "order"}-${fileName}`;
-
-    console.log("🎯 Target permanent key:", permanentKey);
 
     const copyParams = {
       Bucket: process.env.AWS_BUCKET_NAME,
@@ -326,10 +314,6 @@ const moveFileToPermanent = asyncHandler(async (req, res) => {
       },
     };
 
-    console.log("📋 Copy parameters:", copyParams);
-
-    // Test if the source file exists first
-    console.log("🔍 Checking if source file exists...");
     try {
       await s3
         .headObject({
@@ -337,7 +321,6 @@ const moveFileToPermanent = asyncHandler(async (req, res) => {
           Key: tempKey,
         })
         .promise();
-      console.log("✅ Source file exists");
     } catch (headError) {
       console.error("❌ Source file does not exist:", headError.message);
       return res.status(404).json({
@@ -347,22 +330,15 @@ const moveFileToPermanent = asyncHandler(async (req, res) => {
       });
     }
 
-    console.log("🔄 Starting copy operation...");
     await s3.copyObject(copyParams).promise();
-    console.log("✅ File copied successfully");
-
-    console.log("🗑️ Deleting temporary file...");
     const deleteParams = {
       Bucket: process.env.AWS_BUCKET_NAME,
       Key: tempKey,
     };
 
     await s3.deleteObject(deleteParams).promise();
-    console.log("✅ Temporary file deleted");
 
     const permanentUrl = `https://${process.env.AWS_BUCKET_NAME}.s3-${process.env.AWS_REGION}.amazonaws.com/${permanentKey}`;
-
-    console.log("✅ File moved successfully to:", permanentUrl);
 
     res.status(200).json({
       message: "File moved to permanent location successfully",
@@ -400,16 +376,12 @@ const cleanupTempFile = asyncHandler(async (req, res) => {
       });
     }
 
-    console.log("🗑️ Cleaning up temp file:", tempKey);
-
     const deleteParams = {
       Bucket: process.env.AWS_BUCKET_NAME,
       Key: tempKey,
     };
 
     await s3.deleteObject(deleteParams).promise();
-
-    console.log("✅ Temp file deleted successfully");
 
     res.status(200).json({
       message: "Temporary file deleted successfully",

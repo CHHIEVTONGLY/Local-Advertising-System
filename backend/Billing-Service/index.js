@@ -24,7 +24,7 @@ app.get("/", (req, res) => {
   res.send("Hello from the backend!");
 });
 
-app.use("/api/wallets", requireAuth, walletRoutes);
+app.use("/api/wallets", walletRoutes);
 app.use("/api/transactions", requireAuth, transactionRoutes);
 app.use("/api/ads-transactions", requireAuth, adsTransactionRoutes);
 

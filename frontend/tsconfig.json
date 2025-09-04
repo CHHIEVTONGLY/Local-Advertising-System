@@ -28,6 +28,6 @@
     "**/*.tsx",
     ".next/types/**/*.ts",
     "src/app/api/login/route.js"
-  ],
+, "src/app/components/display/page.tsx"  ],
   "exclude": ["node_modules"]
 }

@@ -6,7 +6,7 @@ import { useState } from "react";
 
 loadStripe(process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY!);
 
-interface AdData {
+export interface AdData {
   ledId: string;
   mediaUrl: string;
   type: string;
@@ -79,7 +79,7 @@ export default function CheckoutButton({
     <Button
       onClick={handleCheckout}
       disabled={disabled || isLoading || amount <= 0}
-      className="w-full rounded-md bg-blue-600 px-4 py-2 font-semibold text-white hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition"
+      className="w-full rounded-md bg-blue-600 px-4 py-2 font-semibold text-white cursor-pointer hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition"
     >
       {isLoading ? "Processing..." : `Pay $${amount.toFixed(2)} & Create Ad`}
     </Button>

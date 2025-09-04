@@ -5,7 +5,6 @@ const asyncHandler = require("express-async-handler");
 const getWallet = asyncHandler(async (req, res) => {
   try {
     const userId = req.user.id;
-    console.log(userId);
     const wallet = await Wallet.findOne({ userId });
 
     if (!wallet) return res.status(404).json({ error: "Wallet not found" });
@@ -18,7 +17,11 @@ const getWallet = asyncHandler(async (req, res) => {
 
 const createWallet = asyncHandler(async (req, res) => {
   try {
-    const userId = req.user.id;
+    const key = req.headers["x-create-wallet-key"];
+    if (!key || key !== process.env.SECRET_CREATE_WALLET_KEY) {
+      return res.status(403).json({ error: "Forbidden" });
+    }
+    const { userId } = req.body;
 
     let wallet = await Wallet.findOne({ userId });
     if (wallet) return res.status(400).json({ error: "Wallet already exists" });
@@ -32,13 +35,22 @@ const createWallet = asyncHandler(async (req, res) => {
 
 const deposit = asyncHandler(async (req, res) => {
   try {
+    const key = req.headers["x-wallet-key"];
+    if (!key || key !== process.env.SECRET_WALLET_KEY) {
+      return res.status(403).json({ error: "Forbidden" });
+    }
+
     const userId = req.user.id;
-    const { amount } = req.body;
+    const { amount, type } = req.body;
 
     if (typeof amount !== "number" || isNaN(amount)) {
       return res.status(400).json({ error: "Invalid amount" });
     }
     if (amount <= 0) return res.status(400).json({ error: "Invalid amount" });
+
+    if (type && type !== "refund") {
+      return res.status(400).json({ error: "Invalid transaction type" });
+    }
 
     let wallet = await Wallet.findOne({ userId });
     if (!wallet) wallet = await Wallet.create({ userId, balance: 0 });
@@ -50,7 +62,7 @@ const deposit = asyncHandler(async (req, res) => {
       walletId: wallet._id.toString(),
       userId,
       amount,
-      type: "deposit",
+      type: type || "deposit",
     });
 
     res.status(200).send({ success: true, data: { wallet, transaction } });
@@ -61,6 +73,10 @@ const deposit = asyncHandler(async (req, res) => {
 
 const deduct = asyncHandler(async (req, res) => {
   try {
+    // const key = req.headers["x-wallet-key"];
+    // if (!key || key !== process.env.SECRET_WALLET_KEY) {
+    //   return res.status(403).json({ error: "Forbidden" });
+    // }
     const userId = req.user.id;
     const { amount } = req.body;
     if (amount <= 0) return res.status(400).json({ error: "Invalid amount" });
