@@ -21,7 +21,8 @@ app.get("/", (req, res) => {
   res.send("Hello from the Ads Service!");
 });
 
-app.use("/api/led", LEDRouter);
+// NOTE : main routes
+app.use("/api/leds", LEDRouter);
 app.use("/api/ads", AdsRouter);
 
 mongoose.connect(uri).then(() => {

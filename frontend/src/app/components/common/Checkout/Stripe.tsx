@@ -3,21 +3,9 @@
 import { Button } from "@/components/ui/button";
 import { loadStripe } from "@stripe/stripe-js";
 import { useState } from "react";
+import { AdData } from "@/app/types/AdsType";
 
 loadStripe(process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY!);
-
-export interface AdData {
-  ledId: string;
-  mediaUrl: string;
-  type: string;
-  duration: number;
-  displayTime: {
-    startTime: string;
-    endTime: string;
-  };
-  pricePerSecond: number;
-  totalCost: number;
-}
 
 export default function CheckoutButton({
   orderId,
@@ -27,6 +15,7 @@ export default function CheckoutButton({
   userToken,
   disabled = false,
   onValidate,
+  onComplete,
 }: {
   orderId: string;
   amount: number;
@@ -35,6 +24,7 @@ export default function CheckoutButton({
   userToken?: string;
   disabled?: boolean;
   onValidate?: () => boolean;
+  onComplete?: () => void;
 }) {
   const [isLoading, setIsLoading] = useState(false);
 
@@ -67,9 +57,11 @@ export default function CheckoutButton({
       }
 
       const { url } = await response.json();
+      if (onComplete) onComplete();
       window.location.href = url;
     } catch (error) {
       console.error("Checkout error:", error);
+      if (onComplete) onComplete();
     } finally {
       setIsLoading(false);
     }

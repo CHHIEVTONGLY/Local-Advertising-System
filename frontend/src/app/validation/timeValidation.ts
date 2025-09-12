@@ -40,7 +40,6 @@ async function fetchBookedRangesFromAPI(ledId: string): Promise<BookedRange[]> {
     }
 
     const data = await response.json();
-    console.log("📅 API Response:", data);
 
     return data.bookedRanges || [];
   } catch (error) {
@@ -80,8 +79,6 @@ export function useTimeValidation({
         // ✅ Properly await the API call
         const newRanges = await fetchBookedRangesFromAPI(ledId);
         const currentDataHash = JSON.stringify(newRanges);
-
-        console.log("📊 Fetched ranges:", newRanges);
 
         // Only update if data actually changed
         if (previousDataRef.current !== currentDataHash) {

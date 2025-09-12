@@ -1,5 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 
+const API_GATEWAY_URL = process.env.API_GATEWAY_URL;
+
 export async function GET(request: NextRequest) {
   try {
     const { searchParams } = new URL(request.url);
@@ -14,7 +16,7 @@ export async function GET(request: NextRequest) {
 
     // Call your backend microservice
     const backendResponse = await fetch(
-      `${process.env.ADS_SERVICE_URL}/api/ads/book-ranges?led=${ledId}`,
+      `${API_GATEWAY_URL}/api/ads/book-ranges?led=${ledId}`,
       {
         method: "GET",
         headers: {

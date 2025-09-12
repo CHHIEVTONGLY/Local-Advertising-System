@@ -22,3 +22,18 @@ export interface AdsType {
   sessionId?: string;
   createdAt?: string;
 }
+
+export interface AdData {
+  ledId: string;
+  mediaUrl: string;
+  type: string;
+  duration: number;
+  displayTime: {
+    startTime: string;
+    endTime: string;
+  };
+  pricePerSecond: number;
+  totalCost: number;
+  tempKey?: string;
+  fileName?: string;
+}

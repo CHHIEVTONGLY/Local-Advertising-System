@@ -26,6 +26,10 @@ interface LED {
 export default function PublishForm() {
   const [mounted, setMounted] = useState(false);
 
+  const [paymentInProgress, setPaymentInProgress] = useState<
+    "checkout" | "wallet" | null
+  >(null);
+
   const [led, setLed] = useState("");
   const [mediaUrl, setMediaUrl] = useState("");
   const [type, setType] = useState<AdType | "">("");
@@ -59,7 +63,7 @@ export default function PublishForm() {
       try {
         setLoadingLEDs(true);
 
-        const response = await fetch("/api/led", {
+        const response = await fetch("/api/leds", {
           method: "GET",
           headers: {
             "Content-Type": "application/json",
@@ -768,8 +772,13 @@ export default function PublishForm() {
         adTitle={`LED Advertisement - ${type} (${duration}s)`}
         adData={adData}
         userToken={userToken}
-        disabled={!isFormValid}
-        onValidate={validateForm}
+        disabled={!isFormValid || paymentInProgress === "wallet"}
+        onValidate={() => {
+          const valid = validateForm();
+          if (valid) setPaymentInProgress("checkout");
+          return valid;
+        }}
+        onComplete={() => setPaymentInProgress(null)}
       />
       <WalletCheckout
         orderId={`ad_${Date.now()}_${led}`}
@@ -777,11 +786,17 @@ export default function PublishForm() {
         adTitle={`LED Advertisement - ${type} (${duration}s)`}
         adData={adData}
         userToken={userToken}
-        disabled={!isFormValid}
-        onValidate={validateForm}
+        disabled={!isFormValid || paymentInProgress === "checkout"}
+        onValidate={() => {
+          const valid = validateForm();
+          if (valid) setPaymentInProgress("wallet");
+          return valid;
+        }}
         onError={(msg) => {
           setMsg(`❌ Payment failed : ${msg}`);
+          setPaymentInProgress(null);
         }}
+        onComplete={() => setPaymentInProgress(null)}
       />
     </div>
   );

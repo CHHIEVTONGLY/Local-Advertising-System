@@ -4,19 +4,18 @@ import axios from "axios";
 import { cookies } from "next/headers";
 import { AdsType } from "../types/AdsType";
 
+const API_GATEWAY_URL = process.env.API_GATEWAY_URL;
+
 const getUserHistoryData = async () => {
   try {
     const cookieStore = await cookies();
     const token = cookieStore.get("token")?.value;
 
-    const adsResponse = await axios.get(
-      `${process.env.ADS_SERVICE_URL}/api/ads/me`,
-      {
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
-      }
-    );
+    const adsResponse = await axios.get(`${API_GATEWAY_URL}/api/ads/me`, {
+      headers: {
+        Authorization: `Bearer ${token}`,
+      },
+    });
 
     return adsResponse.data;
   } catch (error) {

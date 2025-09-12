@@ -3,7 +3,7 @@ import { NextResponse } from "next/server";
 import axios from "axios";
 import crypto from "crypto";
 
-const adsServiceUrl = process.env.ADS_SERVICE_URL;
+const API_GATEWAY_URL = process.env.API_GATEWAY_URL;
 
 export async function POST(req: NextRequest) {
   try {
@@ -50,7 +50,7 @@ export async function POST(req: NextRequest) {
 
     // Call backend upload endpoint
     const response = await axios.post(
-      `${adsServiceUrl}/api/ads/upload-temp`,
+      `${API_GATEWAY_URL}/api/ads/upload-temp`,
       backendFormData,
       {
         headers: {

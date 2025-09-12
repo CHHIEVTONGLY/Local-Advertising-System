@@ -1,0 +1,100 @@
+_format_version: "3.0"
+_transform: true
+
+services:
+  # Main services
+  - name: users-service
+    url: ${KONG_USERS_SERVICE_URL}
+    routes:
+      - name: users-route
+        paths:
+          - /api/users
+        strip_path: false
+
+      # User Login specific routes with rate limiting
+      - name: users-login-route
+        paths:
+          - /api/users/login
+        strip_path: false
+        plugins:
+          - name: rate-limiting
+            config:
+              second: 1
+              minute: 10
+
+      # User Register specific routes with rate limiting
+      - name: users-register-route
+        paths:
+          - /api/users/register
+        strip_path: false
+        plugins:
+          - name: rate-limiting
+            config:
+              second: 1
+              minute: 5
+              hour: 10
+
+  - name: ads-service
+    url: ${KONG_ADS_SERVICE_URL}
+    routes:
+      - name: ads-route
+        paths:
+          - /api/ads
+        strip_path: false
+
+      - name: ads-upload-temp-route
+        paths:
+          - /api/ads/upload-temp
+        strip_path: false
+        plugins:
+          - name: rate-limiting
+            config:
+              second: 1
+              minute: 10
+              hour: 25
+
+  - name: led-service-v1
+    url: ${KONG_LED_SERVICE_URL}
+    routes:
+      - name: led-route-v1
+        paths:
+          - /api/leds
+        strip_path: false
+
+  # Billing service
+  - name: billings-service
+    url: ${KONG_BILLINGS_SERVICE_URL}
+    routes:
+      - name: wallet-route
+        paths:
+          - /api/wallets
+        strip_path: false
+        plugins:
+          - name: rate-limiting
+            config:
+              second: 10
+              minute: 100
+
+  # Sub services route
+
+plugins:
+  # Main plugins
+  - name: rate-limiting
+    service: led-service-v1
+    config:
+      minute: 100
+
+  - name: rate-limiting
+    service: users-service
+    config:
+      minute: 100
+
+  - name: rate-limiting
+    service: ads-service
+    config:
+      minute: 100
+
+  - name: rate-limiting
+    service: billings-service
+    config:
+      minute: 100

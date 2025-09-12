@@ -2,9 +2,8 @@
 
 import { Button } from "@/components/ui/button";
 import { useState, useEffect } from "react";
-import { AdsType } from "@/app/types/AdsType";
 import { useRouter } from "next/navigation";
-
+import { AdData } from "@/app/types/AdsType";
 export default function WalletCheckout({
   orderId,
   amount,
@@ -13,17 +12,17 @@ export default function WalletCheckout({
   userToken,
   disabled = false,
   onValidate,
-  onSuccess,
+  onComplete,
   onError,
 }: {
   orderId: string;
   amount: number;
-  adData: AdsType;
+  adData: AdData;
   adTitle: string;
   userToken: string;
   disabled?: boolean;
   onValidate?: () => boolean;
-  onSuccess?: () => void;
+  onComplete?: () => void;
   onError?: (message: string) => void;
 }) {
   const [isLoading, setIsLoading] = useState(false);
@@ -115,6 +114,7 @@ export default function WalletCheckout({
         onError("Payment failed or was cancelled.");
       }
     } finally {
+      if (onComplete) onComplete();
       setIsLoading(false);
     }
   };

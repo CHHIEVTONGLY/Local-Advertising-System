@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 
-const adsServiceUrl = process.env.ADS_SERVICE_URL;
+const API_GATEWAY_URL = process.env.API_GATEWAY_URL;
 
 export async function POST(
   req: NextRequest,
@@ -13,7 +13,7 @@ export async function POST(
 
     // Proxy the request to the backend Ads Service
     const createAdResponse = await fetch(
-      `${adsServiceUrl}/api/ads/create/${ledId}`,
+      `${API_GATEWAY_URL}/api/ads/create/${ledId}`,
       {
         method: "POST",
         headers: {
@@ -40,7 +40,7 @@ export async function POST(
 
     if (!createAdResponse.ok) {
       // Refund
-      await fetch(`${adsServiceUrl}/api/wallets/deposit`, {
+      await fetch(`${API_GATEWAY_URL}/api/wallets/deposit`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",

@@ -1,14 +1,13 @@
 import { NextResponse } from "next/server";
 
+const API_GATEWAY_URL = process.env.API_GATEWAY_URL;
+
 export async function GET() {
   try {
     // Call your backend microservice
-    const backendResponse = await fetch(
-      `${process.env.ADS_SERVICE_URL}/api/led/all`,
-      {
-        method: "GET",
-      }
-    );
+    const backendResponse = await fetch(`${API_GATEWAY_URL}/api/leds/all`, {
+      method: "GET",
+    });
 
     if (!backendResponse.ok) {
       console.error(`❌ Backend error: ${backendResponse.status}`);

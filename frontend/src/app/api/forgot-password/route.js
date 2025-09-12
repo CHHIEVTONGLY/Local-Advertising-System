@@ -1,14 +1,14 @@
 import { NextResponse } from "next/server";
 import axios from "axios";
 
-const userUrl = process.env.USERS_SERVICE_URL;
+const API_GATEWAY_URL = process.env.API_GATEWAY_URL;
 
 export async function POST(req) {
   try {
     const body = await req.json();
 
     const { data } = await axios.post(
-      `${userUrl}/api/users/forgot-password`,
+      `${API_GATEWAY_URL}/api/users/forgot-password`,
       body,
       {
         headers: {

@@ -2,13 +2,15 @@ import { NextRequest, NextResponse } from "next/server";
 import axios from "axios";
 import { cookies } from "next/headers";
 
+const API_GATEWAY_URL = process.env.API_GATEWAY_URL;
+
 export async function POST(req: NextRequest) {
   try {
     const cookieStore = await cookies();
     const token = cookieStore.get("token")?.value;
     const body = await req.json();
     const { data } = await axios.post(
-      `${process.env.BILLING_SERVICE_URL}/api/wallets/deduct`,
+      `${API_GATEWAY_URL}/api/wallets/deduct`,
       body,
       {
         headers: {
