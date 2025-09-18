@@ -7,8 +7,9 @@ const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, {
   apiVersion: "2025-07-30.basil",
 });
 
+const API_GATEWAY = process.env.API_GATEWAY_URL;
+
 const endpointSecret = process.env.STRIPE_WEBHOOK_SECRET!;
-const adsServiceUrl = process.env.ADS_SERVICE_URL;
 
 export async function POST(request: NextRequest) {
   const body = await request.text();
@@ -61,7 +62,7 @@ async function handleSuccessfulPayment(
 
     // Step 1: Move file from temp to permanent location
     const moveFileResponse = await axios.post(
-      `${adsServiceUrl}/api/ads/move-to-permanent`,
+      `${API_GATEWAY}/api/ads/move-to-permanent`,
       {
         tempKey: adData.tempKey,
         fileName: adData.fileName,
@@ -83,12 +84,13 @@ async function handleSuccessfulPayment(
 
     // Step 2: Create the ad with permanent URL
     const createAdResponse = await fetch(
-      `${adsServiceUrl}/api/ads/create/${adData.ledId}`,
+      `${API_GATEWAY}/api/ads/create/${adData.ledId}`,
       {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
           Authorization: `Bearer ${userToken}`,
+          "x-ads-key": process.env.SECRET_ADS_KEY || "",
         },
         body: JSON.stringify({
           title: adTitle,
@@ -113,8 +115,8 @@ async function handleSuccessfulPayment(
       console.error("❌ Error response:", errorText);
 
       // Refund to user
-      const response = await axios.post(
-        `${process.env.BILLING_SERVICE_URL}/api/wallets/deposit`,
+      await axios.post(
+        `${API_GATEWAY}/api/wallets/deposit`,
         {
           amount: adData.totalCost,
           type: "refund",
@@ -126,8 +128,6 @@ async function handleSuccessfulPayment(
           },
         }
       );
-
-      console.log(response);
 
       // If ad creation fails, we should clean up the permanent file
       await cleanupPermanentFile(permanentMediaUrl);
@@ -158,7 +158,7 @@ async function handleSuccessfulPayment(
 async function cleanupTempFile(tempKey: string) {
   try {
     await axios.post(
-      `${adsServiceUrl}/api/ads/cleanup-temp`,
+      `${API_GATEWAY}/api/ads/cleanup-temp`,
       { tempKey },
       {
         headers: {

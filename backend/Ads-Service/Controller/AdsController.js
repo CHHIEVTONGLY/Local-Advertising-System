@@ -128,6 +128,11 @@ const createAds = asyncHandler(async (req, res) => {
     } = req.body;
     const publisherId = req.user.id;
 
+    const key = req.headers["x-ads-key"];
+    if (!key || key !== process.env.SECRET_ADS_KEY) {
+      return res.status(403).json({ error: "Forbidden" });
+    }
+
     const missingFields = [];
     if (!title) missingFields.push("title");
     if (!mediaUrl) missingFields.push("mediaUrl");

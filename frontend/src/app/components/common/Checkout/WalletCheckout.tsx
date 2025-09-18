@@ -93,6 +93,7 @@ export default function WalletCheckout({
           method: "POST",
           headers: {
             "Content-Type": "application/json",
+            "x-ads-key": process.env.SECRET_ADS_KEY || "",
             Authorization: `Bearer ${userToken}`,
           },
           body: JSON.stringify({
