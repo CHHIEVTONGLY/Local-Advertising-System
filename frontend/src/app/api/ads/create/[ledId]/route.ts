@@ -19,6 +19,7 @@ export async function POST(
         headers: {
           "Content-Type": "application/json",
           Authorization: token || "",
+          "x-ads-key": process.env.SECRET_ADS_KEY || "",
         },
         body: JSON.stringify({
           title: adTitle,
