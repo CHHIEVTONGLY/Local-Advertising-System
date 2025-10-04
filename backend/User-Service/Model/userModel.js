@@ -16,6 +16,7 @@ const User = new Schema(
       default: "publisher",
     },
     telegram: {
+      userId: { type: String, default: null },
       isConnected: { type: Boolean, default: false },
       chatId: { type: String, default: null },
       verifyToken: { type: String, default: null },

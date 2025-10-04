@@ -422,7 +422,7 @@ const generateConnectLink = asyncHandler(async (req, res) => {
 });
 
 const verifyTelegramConnection = asyncHandler(async (req, res) => {
-  const { token, chatId } = req.body;
+  const { token, chatId, userId } = req.body;
 
   const user = await User.findOne({ "telegram.verifyToken": token });
   if (!user)
@@ -431,6 +431,7 @@ const verifyTelegramConnection = asyncHandler(async (req, res) => {
   if (user.telegram?.isConnected) {
     // User is disconnecting
     user.telegram = {
+      userId: null,
       chatId: null,
       isConnected: false,
       verifyToken: null,
@@ -446,6 +447,7 @@ const verifyTelegramConnection = asyncHandler(async (req, res) => {
   } else {
     // User is connecting
     user.telegram = {
+      userId,
       chatId,
       isConnected: true,
       verifyToken: null,

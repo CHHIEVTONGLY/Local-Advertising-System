@@ -74,6 +74,47 @@ const getAds = asyncHandler(async (req, res) => {
   }
 });
 
+const getPendingAds = asyncHandler(async (req, res) => {
+  try {
+    const {
+      q,
+      ownerId,
+      page = "1",
+      limit = "20",
+      sort = "-createdAt",
+    } = req.query;
+
+    const filter = {};
+    filter.reviewStatus = "pending";
+    filter.billingStatus = "paid";
+    if (q) filter.title = { $regex: String(q), $options: "i" };
+    if (ownerId) filter.ownerId = ownerId;
+
+    // Only include ads that start now or in the future
+    const now = new Date();
+    filter["displayTime.startTime"] = { $gt: now };
+
+    const pageNum = Math.max(parseInt(page, 10) || 1, 1);
+    const limitNum = Math.min(Math.max(parseInt(limit, 10) || 20, 1), 100);
+    const skip = (pageNum - 1) * limitNum;
+
+    const [data, total] = await Promise.all([
+      Ads.find(filter).sort(sort).skip(skip).limit(limitNum),
+      Ads.countDocuments(filter),
+    ]);
+
+    res.status(200).send({
+      message: "OK",
+      data,
+      total,
+      page: pageNum,
+      pages: Math.ceil(total / limitNum),
+    });
+  } catch (e) {
+    res.status(500).send({ message: e.message });
+  }
+});
+
 const getAdsAdmin = asyncHandler(async (req, res) => {
   try {
     const {
@@ -190,7 +231,7 @@ const createAds = asyncHandler(async (req, res) => {
       billingStatus,
       totalCost:
         typeof totalCost === "number" ? totalCost : duration * pricePerSecond,
-      reviewStatus: "approved",
+      reviewStatus: "pending",
     });
 
     res.status(201).send({ message: "Created", data: ad });
@@ -427,6 +468,7 @@ function getContentType(fileName) {
 
 module.exports = {
   getAds,
+  getPendingAds,
   getUserAds,
   getAdsAdmin,
   reviewAds,
