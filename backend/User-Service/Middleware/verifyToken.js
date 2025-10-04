@@ -10,7 +10,9 @@ const verifyToken = async (req, res, next) => {
   token = token.replace("Bearer ", "");
   try {
     const decode = jwt.verify(token, process.env.SECRET_KEY);
-    const user = await User.findById(decode.id).select("id email role");
+    const user = await User.findById(decode.id).select(
+      "id email role telegram.chatId telegram.isConnected"
+    );
 
     if (!user) {
       return res.status(404).json({ error: "User not found" });

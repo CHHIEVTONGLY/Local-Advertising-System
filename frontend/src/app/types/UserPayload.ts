@@ -7,4 +7,8 @@ export interface UserPayload {
   isVerified: boolean;
   profileUrl: string;
   role: string;
+  telegram?: {
+    chatId: string;
+    isConnected: boolean;
+  };
 }
