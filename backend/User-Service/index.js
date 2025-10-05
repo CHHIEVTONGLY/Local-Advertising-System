@@ -4,6 +4,7 @@ const cors = require("cors");
 const helmet = require("helmet");
 const mongoose = require("mongoose");
 const userRoutes = require("./Router/userRoutes");
+const telegramBotRoutes = require("./Router/telegramBotRoutes");
 
 const uri = process.env.MONGODB_URI;
 const PORT = process.env.PORT || 4000;
@@ -15,7 +16,11 @@ app.use(cors());
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
+// ! User routes
 app.use("/api/users", userRoutes);
+
+// ! Telegram Bot Routes
+app.use("/api/users/telegram", telegramBotRoutes);
 
 app.get("/", (req, res) => {
   res.send("Hello from the backend!");

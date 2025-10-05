@@ -16,6 +16,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import WalletDisplay from "./common/WalletDisplay";
+import { Send } from "lucide-react";
 
 export default function NavigationBar() {
   const [login, setLogin] = useState(false);
@@ -23,7 +24,34 @@ export default function NavigationBar() {
     "login"
   );
   const [user, setUser] = useState<UserPayload | null>(null);
-  const { avatarUrl, setAvatarUrl, logout } = useStore();
+  const {
+    avatarUrl,
+    setAvatarUrl,
+    logout,
+    telegramConnected,
+    setTelegramConnected,
+  } = useStore();
+
+  const fetchTelegramStatus = async () => {
+    try {
+      const token = Cookies.get("token");
+      if (!token) return;
+
+      const response = await fetch("/api/telegram/status", {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      });
+
+      if (response.ok) {
+        const statusData = await response.json();
+
+        setTelegramConnected(statusData.telegram?.isConnected || false);
+      }
+    } catch (error) {
+      console.error("Failed to fetch Telegram status:", error);
+    }
+  };
 
   useEffect(() => {
     const token = Cookies.get("token");
@@ -31,8 +59,27 @@ export default function NavigationBar() {
       const decodedToken: UserPayload = jwtDecode(token);
       setAvatarUrl(decodedToken.profileUrl);
       setUser(decodedToken);
+
+      setTelegramConnected(decodedToken.telegram?.isConnected || false);
+
+      fetchTelegramStatus();
     }
-  }, [setAvatarUrl]);
+  }, [setAvatarUrl, setTelegramConnected]);
+
+  // ADD: Real-time updates when user returns to tab
+  useEffect(() => {
+    const handleVisibilityChange = () => {
+      if (!document.hidden && user) {
+        fetchTelegramStatus();
+      }
+    };
+
+    document.addEventListener("visibilitychange", handleVisibilityChange);
+
+    return () => {
+      document.removeEventListener("visibilitychange", handleVisibilityChange);
+    };
+  }, [user]);
 
   const handleLogOut = () => {
     Cookies.remove("token");
@@ -41,9 +88,29 @@ export default function NavigationBar() {
     setLogin(false);
   };
 
+  const handleConnectTelegram = async () => {
+    try {
+      const token = Cookies.get("token");
+      const res = await fetch("/api/telegram/connect", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: "Bearer " + token,
+        },
+        body: JSON.stringify({ userId: user?.id }),
+      });
+
+      const data = await res.json();
+      if (data.link) {
+        window.open(data.link, "_blank");
+      }
+    } catch (err) {
+      console.error(err);
+    }
+  };
+
   return (
     <div>
-      {/* Logo  */}
       <nav className="p-2 border-b-1 border-gray-200 dark:border-gray-800 w-full">
         <div className="flex items-center justify-between max-w-7xl mx-auto">
           <div className="flex items-center gap-3">
@@ -59,7 +126,6 @@ export default function NavigationBar() {
             <h1 className="text-lg font-semibold">Global Advertising</h1>
           </div>
           <div className="flex items-center gap-2">
-            {/* Wallet Display */}
             <Link
               href="/publish"
               className="rounded-md px-3 py-2 text-sm font-semibold bg-blue-600 text-white hover:bg-blue-700 transition"
@@ -115,6 +181,24 @@ export default function NavigationBar() {
                       </DropdownMenuItem>
                     </Link>
 
+                    {telegramConnected ? (
+                      <DropdownMenuItem
+                        onClick={handleConnectTelegram}
+                        className="cursor-pointer px-4 py-2 hover:bg-gray-100 dark:hover:bg-gray-800 focus:bg-gray-100 dark:focus:bg-gray-800"
+                      >
+                        <Send className="mr-2 h-4 w-4" />
+                        Disconnect Telegram
+                      </DropdownMenuItem>
+                    ) : (
+                      <DropdownMenuItem
+                        onClick={handleConnectTelegram}
+                        className="cursor-pointer px-4 py-2 hover:bg-gray-100 dark:hover:bg-gray-800 focus:bg-gray-100 dark:focus:bg-gray-800"
+                      >
+                        <Send className="mr-2 h-4 w-4" />
+                        Connect Telegram
+                      </DropdownMenuItem>
+                    )}
+
                     <DropdownMenuItem
                       onClick={handleLogOut}
                       className="cursor-pointer px-4 py-2 hover:bg-gray-100 dark:hover:bg-gray-800 focus:bg-gray-100 dark:focus:bg-gray-800 text-red-500"
@@ -150,8 +234,6 @@ export default function NavigationBar() {
             )}
           </div>
         </div>
-
-        {/* Theme Toggle and User profile */}
       </nav>
       {login && (
         <Login

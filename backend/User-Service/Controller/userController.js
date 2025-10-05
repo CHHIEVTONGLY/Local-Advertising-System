@@ -9,6 +9,7 @@ const { OAuth2Client } = require("google-auth-library");
 const client = new OAuth2Client(process.env.GOOGLE_CLIENT_ID);
 const s3 = require("../utils/s3");
 const axios = require("axios");
+const crypto = require("crypto");
 
 const registerUser = asyncHandler(async (req, res) => {
   const { name, email, password, company, contact } = req.body;
@@ -107,6 +108,7 @@ const login = asyncHandler(async (req, res) => {
       profileUrl: userFound.profileUrl,
       isVerified: userFound.isVerified,
       isSSO: userFound.isSSO || false,
+      telegram: userFound.telegram || {},
     },
     process.env.SECRET_KEY,
     { expiresIn: "7d" }
@@ -123,6 +125,7 @@ const getUserProfile = asyncHandler(async (req, res) => {
 
   try {
     const decoded = jwt.verify(token, process.env.SECRET_KEY);
+
     const user = await User.findById(decoded.id).select("-password");
     if (!user) {
       return res.status(404).json({ message: "User not found" });

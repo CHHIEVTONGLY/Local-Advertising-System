@@ -15,6 +15,12 @@ const User = new Schema(
       enum: ["admin", "publisher"],
       default: "publisher",
     },
+    telegram: {
+      userId: { type: String, default: null },
+      isConnected: { type: Boolean, default: false },
+      chatId: { type: String, default: null },
+      verifyToken: { type: String, default: null },
+    },
     createdAt: Date,
     updatedAt: Date,
   },

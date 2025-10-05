@@ -14,16 +14,20 @@ app.use(cors());
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
-const LEDRouter = require("./Router/LEDsRoutes");
-const AdsRouter = require("./Router/AdsRoutes");
+const LEDRoutes = require("./Router/LEDsRoutes");
+const AdsRoutes = require("./Router/AdsRoutes");
+const telegramBotRoutes = require("./Router/telegramBotRoutes");
 
 app.get("/", (req, res) => {
   res.send("Hello from the Ads Service!");
 });
 
 // NOTE : main routes
-app.use("/api/leds", LEDRouter);
-app.use("/api/ads", AdsRouter);
+app.use("/api/leds", LEDRoutes);
+app.use("/api/ads", AdsRoutes);
+
+// NOTE : Telegram Bot Routes
+app.use("/api/ads/telegram", telegramBotRoutes);
 
 mongoose.connect(uri).then(() => {
   console.log("MongoDB connected successfully");
