@@ -26,9 +26,6 @@ const {
   resetPassword,
   changePassword,
   updateUserProfile,
-  generateConnectLink,
-  getTelegramStatus,
-  verifyTelegramConnection,
 } = require("../Controller/userController.js");
 
 const validate = (req, res, next) => {
@@ -59,12 +56,5 @@ router.post("/reset-password/:token", resetPassword);
 // UPDATE METHOD
 router.put("/change-password", verifyToken, changePassword);
 router.put("/update-profile", verifyToken, updateUserProfile);
-
-// ! Telegram Bot Integration
-router.post("/telegram/connect", verifyToken, generateConnectLink);
-router.get("/telegram/status", verifyToken, getTelegramStatus);
-
-// Update Telegram connection status
-router.put("/telegram/verify", verifyTelegramConnection);
 
 module.exports = router;

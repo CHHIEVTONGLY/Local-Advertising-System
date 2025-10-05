@@ -23,11 +23,20 @@ export default function AdCard({ ad }: { ad: AdsType }) {
 
   const badge = (label: string, value: string) => {
     const colors: Record<string, string> = {
-      approved: "bg-green-100 text-green-700 border border-green-300",
+      // status enum: ["draft", "pending", "active", "completed"]
+      draft: "bg-slate-100 text-slate-700 border border-slate-300",
       pending: "bg-yellow-100 text-yellow-700 border border-yellow-300",
-      rejected: "bg-red-100 text-red-700 border border-red-300",
-      paid: "bg-blue-100 text-blue-700 border border-blue-300",
+      active: "bg-green-100 text-green-700 border border-green-300",
+      completed: "bg-emerald-100 text-emerald-700 border border-emerald-300",
+
+      // billingStatus enum: ["unpaid", "paid", "refunded"]
       unpaid: "bg-gray-100 text-gray-700 border border-gray-300",
+      paid: "bg-blue-100 text-blue-700 border border-blue-300",
+      refunded: "bg-purple-100 text-purple-700 border border-purple-300",
+
+      // reviewStatus enum: ["pending", "approved", "rejected"]
+      approved: "bg-green-100 text-green-700 border border-green-300",
+      rejected: "bg-red-100 text-red-700 border border-red-300",
     };
     return (
       <span

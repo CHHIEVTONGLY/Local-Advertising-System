@@ -40,7 +40,7 @@ const deposit = asyncHandler(async (req, res) => {
       return res.status(403).json({ error: "Forbidden" });
     }
 
-    const userId = req.user.id;
+    const userId = req.user?.id || req.body.userId;
     const { amount, type } = req.body;
 
     if (typeof amount !== "number" || isNaN(amount)) {
@@ -48,7 +48,9 @@ const deposit = asyncHandler(async (req, res) => {
     }
     if (amount <= 0) return res.status(400).json({ error: "Invalid amount" });
 
-    if (type && type !== "refund") {
+    const validTypes = ["deposit", "refund"];
+
+    if (type && !validTypes.includes(type)) {
       return res.status(400).json({ error: "Invalid transaction type" });
     }
 
@@ -67,7 +69,7 @@ const deposit = asyncHandler(async (req, res) => {
 
     res.status(200).send({ success: true, data: { wallet, transaction } });
   } catch (err) {
-    res.status(500).json({ error: "Internal server error" });
+    res.status(500).json({ error: err.message });
   }
 });
 

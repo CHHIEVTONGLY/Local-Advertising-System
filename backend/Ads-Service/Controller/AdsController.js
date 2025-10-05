@@ -1,7 +1,6 @@
 const Ads = require("../Model/AdsModel");
 const asyncHandler = require("express-async-handler");
 const s3 = require("../utils/s3");
-const axios = require("axios");
 
 const getUserAds = asyncHandler(async (req, res) => {
   try {
@@ -268,10 +267,10 @@ const getBookedRanges = asyncHandler(async (req, res) => {
     if (!led) return res.status(400).json({ message: "LED is required" });
 
     const now = new Date();
-    // Fetch all approved + paid ads that are starting now or in the future
+    // Fetch all pending + paid ads that are starting now or in the future
     const bookedAds = await Ads.find({
       led,
-      reviewStatus: "approved",
+      reviewStatus: { $in: ["pending", "approved"] },
       billingStatus: "paid",
       "displayTime.endTime": { $gte: now },
     }).sort("displayTime.startTime");
