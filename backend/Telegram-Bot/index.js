@@ -6,6 +6,10 @@ const WebSocket = require("ws");
 const verifyAdmin = require("./middleware/verifyAdmin.js");
 const WebSocketConnection = require("./websocket/wsConnection.js");
 
+const {
+  formatDisplayTimeForApproval,
+} = require("./utils/approvalFormatTime.js");
+
 const bot = new Telegraf(process.env.BOT_TOKEN);
 const API_GATEWAY_URL = process.env.API_GATEWAY_URL;
 
@@ -55,6 +59,8 @@ wsConnection.onMessage("adminUpdate", async (message) => {
       // CREATE RICH NOTIFICATION WITH NEW AD DETAILS
       const latestAd = sortedNewAds[0]; // Most recent
 
+      latestAd.displayTime = formatDisplayTimeForApproval(latestAd.displayTime);
+
       const adDetailsMessage =
         `\n\n📄 *Latest Ad Details:*\n` +
         `🎯 Ads ID: \`${latestAd._id}\`\n` +
@@ -62,7 +68,8 @@ wsConnection.onMessage("adminUpdate", async (message) => {
         `💰 Total Cost: $${latestAd.totalCost}\n` +
         `⏱️ Duration: ${latestAd.duration} seconds\n` +
         `🎬 Type: ${latestAd.type.toUpperCase()}\n` +
-        `💵 Rate: $${latestAd.pricePerSecond}/second`;
+        `💵 Rate: $${latestAd.pricePerSecond}/second\n\n` +
+        `📅 Display Date : **${latestAd.displayTime}**`;
 
       if (sortedNewAds.length > 1) {
         const otherAdsMessage =
@@ -261,16 +268,50 @@ bot.on("callback_query", async (ctx) => {
               .replace("Please review for approval! ⬇️", "")
               .trim();
 
+            const cleanCaptionForResponseUser = caption
+              .split("\n")
+              .filter(
+                (line) =>
+                  !line.startsWith("📊 Total pending") &&
+                  !line.startsWith("⏰") &&
+                  !line.startsWith("🆕") &&
+                  !line.startsWith("Please review for approval! ⬇️")
+              )
+              .join("\n");
+
             const approvalMessage =
               `\n\n✅ **STATUS: APPROVED**\n` +
               `👤 By: ${adminDisplay}\n` +
               `🆔 Admin ID: \`${ctx.from.id}\`\n` +
-              `📅 Time: \`${new Date().toLocaleString()}\`\n`;
+              `📅 Approval Time: \`${new Date().toLocaleString()}\`\n`;
 
             ctx.editMessageCaption(cleanedCaption + approvalMessage, {
               parse_mode: "Markdown",
               reply_markup: { inline_keyboard: [] },
             });
+
+            // * Notify user about approval
+            const adsType = approvalResponse.data.data.type;
+            // Notify user about rejection
+            if (adsType === "image") {
+              bot.telegram.sendPhoto(
+                telegramUserId,
+                approvalResponse.data.data.mediaUrl,
+                {
+                  caption: `✅ Your ad has been approved!\n${cleanCaptionForResponseUser}\nThank you for using our system! 🎉`,
+                  parse_mode: "Markdown",
+                }
+              );
+            } else if (adsType === "video") {
+              bot.telegram.sendVideo(
+                telegramUserId,
+                approvalResponse.data.data.mediaUrl,
+                {
+                  caption: `✅ Your ad has been approved!!\n${cleanCaptionForResponseUser}\nThank you for using our system! 🎉`,
+                  parse_mode: "Markdown",
+                }
+              );
+            }
           } catch (error) {
             ctx.answerCbQuery("❌ Error updating message caption");
           }
@@ -305,7 +346,6 @@ bot.on("callback_query", async (ctx) => {
           }
         );
         if (rejectionResponse.data) {
-          console.log(response.data);
           try {
             ctx.answerCbQuery(`✅ Ad rejected & refund sucessfully `);
             const caption = ctx.callbackQuery.message.caption || "";
@@ -328,16 +368,52 @@ bot.on("callback_query", async (ctx) => {
               .replace("Please review for approval! ⬇️", "")
               .trim();
 
+            const cleanCaptionForResponseUser = caption
+              .split("\n")
+              .filter(
+                (line) =>
+                  !line.startsWith("📊 Total pending") &&
+                  !line.startsWith("⏰") &&
+                  !line.startsWith("🆕") &&
+                  !line.startsWith("Please review for approval! ⬇️")
+              )
+              .join("\n");
+
             const rejectionMessage =
               `\n\n❌ **STATUS: REJECTED**\n` +
               `👤 By: ${adminDisplay}\n` +
-              `🆔 Admin ID: \`${ctx.from.id}\`\n` +
-              `📅 Time: \`${new Date().toLocaleString()}\`\n`;
+              `📅 Rejection Time: \`${new Date().toLocaleString()}\`\n`;
 
             ctx.editMessageCaption(cleanedCaption + rejectionMessage, {
               parse_mode: "Markdown",
               reply_markup: { inline_keyboard: [] },
             });
+
+            const adsType = rejectionResponse.data.data.type;
+            // Notify user about rejection
+            if (adsType === "image") {
+              bot.telegram.sendPhoto(
+                telegramUserId,
+                rejectionResponse.data.data.mediaUrl,
+                {
+                  caption: `❌ Your ad has been rejected!\n${
+                    cleanCaptionForResponseUser + rejectionMessage
+                  }\nYou can reach out to our support for more details. Thank you for using Global Advertising! 🎉`,
+                  parse_mode: "Markdown",
+                }
+              );
+            } else if (adsType === "video") {
+              bot.telegram.sendVideo(
+                telegramUserId,
+                rejectionResponse.data.data.mediaUrl,
+                {
+                  caption: `❌ Your ad has been rejected!\n${
+                    cleanCaptionForResponseUser + rejectionMessage
+                  }\nYou can reach out to our support for more details. Thank you for using Global Advertising! 🎉`,
+                  parse_mode: "Markdown",
+                }
+              );
+            }
           } catch (error) {
             ctx.answerCbQuery("❌ Error updating message caption");
           }
