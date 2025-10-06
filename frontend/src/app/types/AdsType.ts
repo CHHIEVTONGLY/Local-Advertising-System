@@ -13,7 +13,12 @@ export interface AdsType {
     endTime: string;
   };
   reviewStatus: string;
-  led: string;
+  led: {
+    _id: string;
+    name: string;
+    location: string;
+    screenSize: string;
+  };
   pricePerSecond: number;
   totalCost: number;
   status?: string;
