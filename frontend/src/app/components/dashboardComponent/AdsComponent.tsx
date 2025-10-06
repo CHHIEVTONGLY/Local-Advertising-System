@@ -2,7 +2,7 @@
 import { AdsType } from "@/app/types/AdsType";
 import Image from "next/image";
 import { ExternalLink, X } from "lucide-react";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 
 export default function AdCard({ ad }: { ad: AdsType }) {
   const {
@@ -20,6 +20,19 @@ export default function AdCard({ ad }: { ad: AdsType }) {
   } = ad;
 
   const [showModal, setShowModal] = useState(false);
+
+  useEffect(() => {
+    if (showModal) {
+      document.body.style.overflow = "hidden";
+    } else {
+      document.body.style.overflow = "unset";
+    }
+
+    // Cleanup function to restore scroll when component unmounts
+    return () => {
+      document.body.style.overflow = "unset";
+    };
+  }, [showModal]);
 
   const badge = (label: string, value: string) => {
     const colors: Record<string, string> = {
@@ -97,7 +110,7 @@ export default function AdCard({ ad }: { ad: AdsType }) {
               {pricePerSecond.toFixed(2)}
             </p>
             <p>
-              <span className="font-semibold">LED:</span> {led}
+              <span className="font-semibold">LED:</span> {led.location}
             </p>
             <p className="col-span-2 text-xs text-gray-500">
               {new Date(displayTime.startTime).toLocaleString()} →{" "}
@@ -107,7 +120,7 @@ export default function AdCard({ ad }: { ad: AdsType }) {
           <div className="flex justify-between items-center pt-3 border-t">
             <button
               onClick={() => setShowModal(true)}
-              className="text-sm font-medium text-blue-600 hover:text-blue-700 flex items-center"
+              className="text-sm font-medium text-blue-600 hover:text-blue-700 flex items-center cursor-pointer"
             >
               Preview
               <ExternalLink className="ml-1 h-4 w-4" />
@@ -121,35 +134,50 @@ export default function AdCard({ ad }: { ad: AdsType }) {
 
       {/* Modal Popup */}
       {showModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center backdrop-blur-xl bg-opacity-30">
-          <div className="bg-white rounded-lg shadow-lg p-4 max-w-4xl w-full relative">
-            <button
-              aria-label="Close"
-              onClick={() => setShowModal(false)}
-              className="absolute top-2 right-2 text-gray-500 hover:text-gray-700 text-2xl cursor-pointer"
-            >
-              <X />
-            </button>
-            <div className="flex flex-col items-center">
-              <h2 className="text-lg font-semibold mb-2">
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+          {/* Backdrop */}
+          <div
+            className="absolute inset-0 bg-black/60 backdrop-blur-sm"
+            onClick={() => setShowModal(false)}
+          />
+
+          {/* Modal Container */}
+          <div className="relative bg-white rounded-2xl shadow-2xl max-w-4xl w-full max-h-[90vh] overflow-hidden">
+            {/* Header */}
+            <div className="flex items-center justify-between p-6 border-b border-gray-100">
+              <h2 className="text-xl font-semibold text-gray-900">
                 {title || "Ad Preview"}
               </h2>
-              {type === "video" ? (
-                <video
-                  src={mediaUrl}
-                  controls
-                  autoPlay
-                  className="w-full rounded-lg ad-video-preview"
-                />
-              ) : (
-                <Image
-                  src={mediaUrl || ""}
-                  alt="Ad preview"
-                  width={400}
-                  height={300}
-                  className="rounded-lg"
-                />
-              )}
+              <button
+                aria-label="Close"
+                onClick={() => setShowModal(false)}
+                className="p-2 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-full transition-colors cursor-pointer"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            {/* Media Content */}
+            <div className="p-6">
+              <div className="flex items-center justify-center bg-gray-50 rounded-xl overflow-hidden">
+                {type === "video" ? (
+                  <video
+                    src={mediaUrl}
+                    controls
+                    autoPlay
+                    className="max-w-full max-h-[70vh] rounded-lg"
+                  />
+                ) : (
+                  <Image
+                    src={mediaUrl || ""}
+                    alt="Ad preview"
+                    width={0}
+                    height={0}
+                    sizes="100vw"
+                    className="w-auto h-auto max-w-full max-h-[70vh] rounded-lg object-contain"
+                  />
+                )}
+              </div>
             </div>
           </div>
         </div>

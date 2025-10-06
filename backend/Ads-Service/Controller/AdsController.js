@@ -15,9 +15,11 @@ const getUserAds = asyncHandler(async (req, res) => {
     const skip = (pageNum - 1) * limitNum;
 
     const [ads, total] = await Promise.all([
-      Ads.find(filter).sort(sort).skip(skip).limit(limitNum),
+      Ads.find(filter).populate("led").sort(sort).skip(skip).limit(limitNum),
       Ads.countDocuments(filter),
     ]);
+
+    console.log(ads);
 
     res.status(200).send({
       message: "OK",
