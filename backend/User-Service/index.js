@@ -5,6 +5,7 @@ const helmet = require("helmet");
 const mongoose = require("mongoose");
 const userRoutes = require("./Router/userRoutes");
 const telegramBotRoutes = require("./Router/telegramBotRoutes");
+const adminRoutes = require("./Router/adminRouter");
 
 const uri = process.env.MONGODB_URI;
 const PORT = process.env.PORT || 4000;
@@ -21,6 +22,9 @@ app.use("/api/users", userRoutes);
 
 // ! Telegram Bot Routes
 app.use("/api/users/telegram", telegramBotRoutes);
+
+// ! Admin Routes
+app.use("/api/users/admin", adminRoutes);
 
 app.get("/", (req, res) => {
   res.send("Hello from the backend!");

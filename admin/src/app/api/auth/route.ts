@@ -15,7 +15,14 @@ export async function POST(req: NextRequest) {
     );
 
     if (!response.ok) {
-      return new NextResponse("Login failed", { status: response.status });
+      const errorData = await response.json().catch(() => ({}));
+      return NextResponse.json(
+        {
+          error: errorData.error || errorData.message || "Login failed",
+          details: errorData.details,
+        },
+        { status: response.status }
+      );
     }
 
     const data = await response.json();
@@ -35,6 +42,12 @@ export async function POST(req: NextRequest) {
     return res;
   } catch (err) {
     console.error(err);
-    return new NextResponse("Internal server error", { status: 500 });
+    return NextResponse.json(
+      {
+        error: "Internal server error",
+        details: err instanceof Error ? err.message : String(err),
+      },
+      { status: 500 }
+    );
   }
 }
