@@ -30,7 +30,7 @@ export default function DebugWebSocket() {
     const start = new Date(ad.displayTime.startTime);
     const end = new Date(ad.displayTime.endTime);
     if (now >= start && now <= end) {
-      acc[ad.led] = ad;
+      acc[ad.led._id] = ad;
     }
     return acc;
   }, {});

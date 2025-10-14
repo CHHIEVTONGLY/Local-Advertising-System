@@ -4,14 +4,13 @@ const API_GATEWAY_URL = process.env.API_GATEWAY_URL;
 
 export async function POST(
   req: NextRequest,
-  { params }: { params: { ledId: string } }
+  { params }: { params: Promise<{ ledId: string }> }
 ) {
   try {
     const { ledId } = await params;
     const { adTitle, permanentMediaUrl, adData, orderId } = await req.json();
     const token = req.headers.get("authorization");
 
-    // Proxy the request to the backend Ads Service
     const createAdResponse = await fetch(
       `${API_GATEWAY_URL}/api/ads/create/${ledId}`,
       {
@@ -40,7 +39,7 @@ export async function POST(
     const adResult = await createAdResponse.json();
 
     if (!createAdResponse.ok) {
-      // Refund
+      // Refund if ad creation fails
       await fetch(`${API_GATEWAY_URL}/api/wallets/deposit`, {
         method: "POST",
         headers: {
@@ -61,11 +60,17 @@ export async function POST(
 
     return NextResponse.json({ success: true, ad: adResult });
   } catch (error) {
-    if (error instanceof Error) {
-      return NextResponse.json(
-        { error: error.message || "Internal server error" },
-        { status: 500 }
-      );
-    }
+    console.error("Ad creation error:", error);
+
+    // Always return a response
+    return NextResponse.json(
+      {
+        error:
+          error instanceof Error
+            ? error.message
+            : "Unexpected internal server error",
+      },
+      { status: 500 }
+    );
   }
 }

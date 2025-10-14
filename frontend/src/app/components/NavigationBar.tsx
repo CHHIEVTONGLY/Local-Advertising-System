@@ -1,7 +1,7 @@
 "use client";
 import ThemeToggle from "./common/ThemeToggle";
 import Image from "next/image";
-import { useEffect, useState } from "react";
+import { useEffect, useState, useCallback } from "react";
 import Login from "./common/Login";
 import Cookies from "js-cookie";
 import { useStore } from "../utils/zustance";
@@ -32,7 +32,7 @@ export default function NavigationBar() {
     setTelegramConnected,
   } = useStore();
 
-  const fetchTelegramStatus = async () => {
+  const fetchTelegramStatus = useCallback(async () => {
     try {
       const token = Cookies.get("token");
       if (!token) return;
@@ -51,7 +51,7 @@ export default function NavigationBar() {
     } catch (error) {
       console.error("Failed to fetch Telegram status:", error);
     }
-  };
+  }, [setTelegramConnected]);
 
   useEffect(() => {
     const token = Cookies.get("token");
@@ -64,7 +64,7 @@ export default function NavigationBar() {
 
       fetchTelegramStatus();
     }
-  }, [setAvatarUrl, setTelegramConnected]);
+  }, [setAvatarUrl, setTelegramConnected, fetchTelegramStatus]);
 
   // ADD: Real-time updates when user returns to tab
   useEffect(() => {
@@ -79,7 +79,7 @@ export default function NavigationBar() {
     return () => {
       document.removeEventListener("visibilitychange", handleVisibilityChange);
     };
-  }, [user]);
+  }, [user, fetchTelegramStatus]);
 
   const handleLogOut = () => {
     Cookies.remove("token");
