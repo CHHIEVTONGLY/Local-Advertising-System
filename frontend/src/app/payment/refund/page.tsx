@@ -1,12 +1,8 @@
 "use client";
 import { RotateCcw } from "lucide-react";
 import Link from "next/link";
-import { useSearchParams } from "next/navigation";
 
 export default function RefundPage() {
-  const searchParams = useSearchParams();
-  const amount = searchParams.get("amount");
-
   return (
     <div className="min-h-screen flex items-center justify-center bg-gray-50">
       <div className="bg-white p-8 rounded-lg shadow-md text-center max-w-md">
@@ -19,15 +15,8 @@ export default function RefundPage() {
           Refund Processed
         </h1>
         <p className="text-gray-600 mb-6">
-          {amount ? (
-            <>
-              A refund of{" "}
-              <span className="text-blue-700 font-bold">${amount}</span> has
-              been processed. The amount should appear in your internal wallet.
-            </>
-          ) : (
-            "Your payment has been refunded. The amount should appear in your wallet or bank account soon."
-          )}
+          Your payment has been refunded. The amount should appear in your
+          wallet or bank account soon.
         </p>
         <div className="flex">
           <Link
