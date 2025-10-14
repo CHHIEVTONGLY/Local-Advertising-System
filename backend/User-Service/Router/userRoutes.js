@@ -12,6 +12,7 @@ const {
   verifyAdmin,
   verifyPublisher,
   verifyToken,
+  tryVerifyToken,
 } = require("../Middleware/verifyToken.js");
 
 // User controller
@@ -26,6 +27,7 @@ const {
   resetPassword,
   changePassword,
   updateUserProfile,
+  userVerifyToken,
 } = require("../Controller/userController.js");
 
 const validate = (req, res, next) => {
@@ -40,6 +42,7 @@ const validate = (req, res, next) => {
 };
 
 router.get("/me", verifyToken, getUserProfile);
+router.get("/auth/verify", verifyToken, userVerifyToken);
 
 // Register User
 router.post("/register", registerUserValidator, validate, registerUser);

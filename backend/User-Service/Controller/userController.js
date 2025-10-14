@@ -394,6 +394,22 @@ const updateUserProfile = asyncHandler(async (req, res) => {
   }
 });
 
+const userVerifyToken = asyncHandler(async (req, res) => {
+  if (!req.user) {
+    return res
+      .status(200)
+      .json({ success: false, message: "No token provided" });
+  }
+  return res.status(200).json({
+    valid: true,
+    user: {
+      id: req.user.id,
+      role: req.user.role,
+      email: req.user.email,
+    },
+  });
+});
+
 module.exports = {
   registerUser,
   login,
@@ -405,4 +421,5 @@ module.exports = {
   resetPassword,
   changePassword,
   updateUserProfile,
+  userVerifyToken,
 };
