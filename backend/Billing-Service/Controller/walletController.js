@@ -40,8 +40,7 @@ const deposit = asyncHandler(async (req, res) => {
       return res.status(403).json({ error: "Forbidden" });
     }
 
-    const userId = req.user?.id || req.body.userId;
-    const { amount, type } = req.body;
+    const { amount, type, userId } = req.body;
 
     if (typeof amount !== "number" || isNaN(amount)) {
       return res.status(400).json({ error: "Invalid amount" });

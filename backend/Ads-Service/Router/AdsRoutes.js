@@ -21,7 +21,7 @@ router.get("/all", getAds);
 router.get("/pending", getPendingAds);
 router.get("/me", requireAuth, getUserAds);
 router.get("/admin", requireAdmin, getAdsAdmin);
-router.post("/create/:led", requireAuth, createAds);
+router.post("/create/:led", createAds);
 router.put("/review/:adsId", requireAuth, reviewAds);
 
 router.post("/upload-temp", requireAuth, upload.single("file"), uploadTempFile);

@@ -1,6 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
+import jwt from "jsonwebtoken";
 
 const API_GATEWAY_URL = process.env.API_GATEWAY_URL;
+const SECRET_KEY = process.env.SECRET_KEY!;
 
 export async function POST(
   req: NextRequest,
@@ -9,7 +11,21 @@ export async function POST(
   try {
     const { ledId } = await params;
     const { adTitle, permanentMediaUrl, adData, orderId } = await req.json();
-    const token = req.headers.get("authorization");
+    const authHeader = req.headers.get("authorization");
+    if (!authHeader) {
+      return NextResponse.json(
+        { error: "Authorization token is missing" },
+        { status: 401 }
+      );
+    }
+    const token = authHeader.startsWith("Bearer ")
+      ? authHeader.slice(7)
+      : authHeader;
+
+    const decoded = jwt.verify(token, SECRET_KEY);
+    const publisherId = (decoded as { id: string }).id;
+
+    console.log(publisherId);
 
     const createAdResponse = await fetch(
       `${API_GATEWAY_URL}/api/ads/create/${ledId}`,
@@ -17,7 +33,6 @@ export async function POST(
         method: "POST",
         headers: {
           "Content-Type": "application/json",
-          Authorization: token || "",
           "x-ads-key": process.env.SECRET_ADS_KEY || "",
         },
         body: JSON.stringify({
@@ -31,6 +46,7 @@ export async function POST(
           status: "pending",
           billingStatus: "paid",
           orderId: orderId,
+          publisherId: publisherId,
           createdAt: new Date().toISOString(),
         }),
       }

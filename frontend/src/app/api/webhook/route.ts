@@ -32,7 +32,7 @@ export async function POST(request: NextRequest) {
 
       // Extract your data from Stripe metadata
       const adData = JSON.parse(session.metadata?.adData || "{}");
-      const userToken = session.metadata?.userToken ?? "";
+      const publisherId = session.metadata?.publisherId ?? "";
       const orderId = session.metadata?.orderId ?? "";
       const adTitle = session.metadata?.adTitle ?? "";
 
@@ -40,7 +40,7 @@ export async function POST(request: NextRequest) {
       await handleSuccessfulPayment(
         adData,
         adTitle,
-        userToken,
+        publisherId,
         orderId,
         session.id
       );
@@ -53,7 +53,7 @@ export async function POST(request: NextRequest) {
 async function handleSuccessfulPayment(
   adData: AdsType,
   adTitle: string,
-  userToken: string,
+  publisherId: string,
   orderId: string,
   sessionId: string
 ) {
@@ -82,6 +82,7 @@ async function handleSuccessfulPayment(
 
     const permanentMediaUrl = moveFileResponse.data.mediaUrl;
 
+    console.log(publisherId);
     // Step 2: Create the ad with permanent URL
     const createAdResponse = await fetch(
       `${API_GATEWAY}/api/ads/create/${adData.ledId}`,
@@ -89,7 +90,6 @@ async function handleSuccessfulPayment(
         method: "POST",
         headers: {
           "Content-Type": "application/json",
-          Authorization: `Bearer ${userToken}`,
           "x-ads-key": process.env.SECRET_ADS_KEY || "",
         },
         body: JSON.stringify({
@@ -104,6 +104,7 @@ async function handleSuccessfulPayment(
           billingStatus: "paid",
           orderId: orderId,
           sessionId: sessionId,
+          publisherId: publisherId,
           createdAt: new Date().toISOString(),
         }),
       }
@@ -120,11 +121,11 @@ async function handleSuccessfulPayment(
         {
           amount: adData.totalCost,
           type: "refund",
+          
         },
         {
           headers: {
             "x-wallet-key": process.env.SECRET_WALLET_KEY,
-            Authorization: `Bearer ${userToken}`,
           },
         }
       );

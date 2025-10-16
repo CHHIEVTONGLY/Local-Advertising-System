@@ -11,7 +11,7 @@ const {
 
 router.get("/me", requireAuth, getWallet);
 router.post("/create", createWallet);
-router.post("/deposit", requireAuth, deposit);
+router.post("/deposit", deposit);
 router.post("/deduct", requireAuth, deduct);
 
 module.exports = router;

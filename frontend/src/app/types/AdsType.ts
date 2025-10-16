@@ -33,6 +33,7 @@ export interface AdData {
   mediaUrl: string;
   type: string;
   duration: number;
+  publisherId?: string;
   displayTime: {
     startTime: string;
     endTime: string;

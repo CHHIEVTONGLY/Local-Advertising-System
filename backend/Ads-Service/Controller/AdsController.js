@@ -170,8 +170,8 @@ const createAds = asyncHandler(async (req, res) => {
       status = "draft",
       billingStatus = "unpaid",
       totalCost,
+      publisherId,
     } = req.body;
-    const publisherId = req.user.id;
 
     const key = req.headers["x-ads-key"];
     if (!key || key !== process.env.SECRET_ADS_KEY) {
