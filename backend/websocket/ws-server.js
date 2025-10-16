@@ -37,7 +37,7 @@ async function fetchAdminAds() {
   try {
     const res = await axios.get(`${ADS_SERVICE_URL}/api/ads/pending`, {
       headers: {
-        Authorization: `Bearer ${process.env.ADMIN_TOKEN}`,
+        "x-ads-key": process.env.SECRET_ADS_KEY,
       },
     });
 
@@ -64,7 +64,7 @@ wss.on("connection", (ws) => {
   );
 
   ws.on("close", () => console.log("Client disconnected"));
-});
+});``
 
 // Poll API every 1 second
 setInterval(fetchAds, 1000);

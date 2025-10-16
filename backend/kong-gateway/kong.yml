@@ -4,7 +4,7 @@ _transform: true
 services:
   # Main services
   - name: users-service
-    url: ${KONG_USERS_SERVICE_URL}
+    url: http://host.docker.internal:3001
     routes:
       - name: users-route
         paths:
@@ -35,7 +35,7 @@ services:
               hour: 10
 
   - name: ads-service
-    url: ${KONG_ADS_SERVICE_URL}
+    url: http://host.docker.internal:3002
     routes:
       - name: ads-route
         paths:
@@ -54,7 +54,7 @@ services:
               hour: 25
 
   - name: led-service-v1
-    url: ${KONG_LED_SERVICE_URL}
+    url: http://host.docker.internal:3002
     routes:
       - name: led-route-v1
         paths:
@@ -63,7 +63,7 @@ services:
 
   # Billing service
   - name: billings-service
-    url: ${KONG_BILLINGS_SERVICE_URL}
+    url: http://host.docker.internal:3003
     routes:
       - name: wallet-route
         paths:
@@ -72,10 +72,51 @@ services:
         plugins:
           - name: rate-limiting
             config:
-              second: 10
-              minute: 100
+              second: 100
+              minute: 1000
 
-  # Sub services route
+  # ! Telegram Bot Services
+  # Telegram Bot ads service
+  - name: telegram-bot-ads-service
+    url: http://host.docker.internal:3002
+    routes:
+      - name: telegram-bot-ads-route
+        paths:
+          - /api/ads/telegram
+        strip_path: false
+        plugins:
+          - name: rate-limiting
+            config:
+              second: 1
+              minute: 10
+
+    # Telegram Bot user service
+  - name: telegram-bot-user-service
+    url: http://host.docker.internal:3001
+    routes:
+      - name: telegram-bot-user-route
+        paths:
+          - /api/users/telegram
+        strip_path: false
+        plugins:
+          - name: rate-limiting
+            config:
+              second: 1
+              minute: 10
+
+  # Telegram bot billing(wallet) service
+  - name: telegram-bot-wallet-service
+    url: http://host.docker.internal:3003
+    routes:
+      - name: telegram-bot-wallet-route
+        paths:
+          - /api/wallets/telegram
+        strip_path: false
+        plugins:
+          - name: rate-limiting
+            config:
+              second: 5
+              minute: 50
 
 plugins:
   # Main plugins
