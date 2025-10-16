@@ -76,6 +76,9 @@ const getAds = asyncHandler(async (req, res) => {
 });
 
 const getPendingAds = asyncHandler(async (req, res) => {
+  if (req.headers["x-ads-key"] !== process.env.SECRET_ADS_KEY) {
+    return res.status(403).json({ error: "Forbidden" });
+  }
   try {
     const {
       q,

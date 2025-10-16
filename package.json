@@ -1,0 +1,21 @@
+{
+  "name": "global-advertising",
+  "version": "1.0.0",
+  "description": "SE & IT Project",
+  "main": "index.js",
+  "scripts": {
+    "dev:gateway": "cd backend/kong-gateway && docker stop kong && docker compose up -d",
+    "dev:frontend": "cd frontend && npm run dev",
+    "dev:ads": "cd backend/Ads-Service && npm run dev",
+    "dev:users": "cd backend/User-Service && npm run dev",
+    "dev:billing": "cd backend/Billing-Service && npm run dev",
+    "dev:websocket": "cd backend/websocket && node ws-server.js",
+    "dev:all": "concurrently \"npm run dev:ads\" \"npm run dev:users\" \"npm run dev:billing\" \"npm run dev:websocket\" \"npm run dev:gateway\" \"npm run dev:frontend\""
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "concurrently": "^9.2.1"
+  }
+}

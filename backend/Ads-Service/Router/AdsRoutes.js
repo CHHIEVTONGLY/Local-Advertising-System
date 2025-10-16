@@ -18,7 +18,7 @@ const {
 } = require("../Controller/AdsController");
 
 router.get("/all", getAds);
-router.get("/pending", requireAuth, getPendingAds);
+router.get("/pending", getPendingAds);
 router.get("/me", requireAuth, getUserAds);
 router.get("/admin", requireAdmin, getAdsAdmin);
 router.post("/create/:led", requireAuth, createAds);
