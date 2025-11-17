@@ -24,6 +24,29 @@ export async function POST(req: NextRequest) {
       );
     }
 
+    const detectionFormData = new FormData();
+    detectionFormData.append("file", file);
+
+    const detectRes = await axios.post(
+      `${API_GATEWAY_URL}/api/detect`,
+      detectionFormData,
+      {
+        headers: { "Content-Type": "multipart/form-data" },
+      }
+    );
+
+    const detectResult = detectRes.data;
+
+    if (detectResult.label !== "BANANA") {
+      return NextResponse.json(
+        {
+          error:
+            "Please check your image again. Image restriction: illegal content detected.",
+        },
+        { status: 400 }
+      );
+    }
+
     // ✅ CREATE ULTRA-SHORT FILENAME
     const originalFileName = file.name;
     const extension = originalFileName.split(".").pop() || "";

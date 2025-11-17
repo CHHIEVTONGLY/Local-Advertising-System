@@ -137,3 +137,8 @@ dist
 
 kong_processed.yml
 kong.yml
+
+__pycache__/
+*.pyc
+*.pyo
+*.pyd

@@ -19,8 +19,6 @@ const getUserAds = asyncHandler(async (req, res) => {
       Ads.countDocuments(filter),
     ]);
 
-    console.log(ads);
-
     res.status(200).send({
       message: "OK",
       data: ads,

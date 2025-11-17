@@ -364,7 +364,6 @@ export default function PublishForm() {
       return;
     }
 
-    // Check file size (max 100MB)
     if (f.size > 100 * 1024 * 1024) {
       setMsg("❌ File size must be less than 100MB.");
       return;
@@ -380,17 +379,49 @@ export default function PublishForm() {
     if (previewUrl) URL.revokeObjectURL(previewUrl);
     setPreviewUrl(url);
 
+    // ✅ FRONTEND BANANA CHECK
+    if (!isVideo) {
+      // Only check images
+      try {
+        const formData = new FormData();
+        formData.append("file", f);
+
+        const response = await fetch(
+          `${process.env.API_GATEWAY_URL}/api/detect`,
+          {
+            method: "POST",
+            body: formData,
+          }
+        );
+
+        const result = await response.json();
+
+        console.log(result);
+
+        if (result.isBanana) {
+          // depends on your detection API response
+          setMsg("❌ This image is banned (banana).");
+          setMediaFile(null);
+          setPreviewUrl(null);
+          setType("");
+          return;
+        }
+      } catch (error) {
+        console.error("Image detection failed", error);
+        setMsg("⚠️ Could not check image, try again.");
+        return;
+      }
+    }
+
+    // ✅ Proceed with backend upload
     try {
-      // Upload to backend API immediately
       const uploadedTempKey = await uploadToTempStorage(f);
       setTempKey(uploadedTempKey);
 
-      // Handle video duration
       if (isVideo) {
         try {
           const secs = await getVideoDuration(f);
           setDuration(secs > 0 ? secs : 0);
-
           if (start && secs > 0) {
             const s = new Date(start);
             const e = new Date(s.getTime() + secs * 1000);
