@@ -15,8 +15,8 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "Global Advertising",
-  description: "Everyone can advertise globally.",
+  title: "Local Advertising",
+  description: "Everyone can advertise locally.",
 };
 
 export default function RootLayout({

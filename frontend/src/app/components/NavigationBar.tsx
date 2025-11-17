@@ -116,14 +116,14 @@ export default function NavigationBar() {
           <div className="flex items-center gap-3">
             <Link href={"/"}>
               <Image
-                className="rounded-full"
-                src="https://globaladvertisingstorage.s3.ap-southeast-2.amazonaws.com/profiles/SEProject.png"
+                className="rounded-full border"
+                src="/main.jfif"
                 width={50}
                 height={50}
                 alt="Logo"
               />
             </Link>
-            <h1 className="text-lg font-semibold">Global Advertising</h1>
+            <h1 className="text-lg font-semibold">Local Advertising</h1>
           </div>
           <div className="flex items-center gap-2">
             <Link
