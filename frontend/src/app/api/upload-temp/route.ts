@@ -37,7 +37,7 @@ export async function POST(req: NextRequest) {
 
     const detectResult = detectRes.data;
 
-    if (detectResult.label !== "BANANA") {
+    if (detectResult.is_sexy == true) {
       return NextResponse.json(
         {
           error:
