@@ -3,38 +3,54 @@ from fastapi.middleware.cors import CORSMiddleware
 from ultralytics import YOLO
 from PIL import Image
 import io
+import numpy as np
 
 app = FastAPI()
 
-# Allow Next.js frontend to call
+# Allow frontend to call
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],  # in production, restrict this
+    allow_origins=["*"],  # restrict in production
     allow_methods=["*"],
     allow_headers=["*"]
 )
 
-# Load model from Hugging Face
-model = YOLO("https://huggingface.co/CHHIEVTONG/banana-detection-ct-v2/resolve/main/best.pt")
+# Load YOLOv8 model from Hugging Face
+model = YOLO("https://huggingface.co/CHHIEVTONG/sexy-detection-v1/resolve/main/best.pt")
+
+print(model.names)
 
 @app.post("/api/detect")
 async def detect(file: UploadFile = File(...)):
-    img = Image.open(io.BytesIO(await file.read()))
-    results = model(img)[0]
+    img = Image.open(io.BytesIO(await file.read())).convert("RGB")
+    img_array = np.array(img)
+    results = model(img_array, imgsz=640)[0]
 
-    threshold = 0.3  # min confidence to consider banana
-    if len(results.boxes) == 0 or max(results.boxes.conf) < threshold:
-        label = "UNKNOWN"
-    else:
-        label = "BANANA"
+    threshold = 0.1
+    detections = []
+    max_conf = 0
+    is_sexy = False
 
-    # Optional: return bounding boxes
-    boxes = []
     for box in results.boxes:
-        boxes.append({
-            "xyxy": box.xyxy.tolist(),
-            "conf": float(box.conf),
-            "cls": int(box.cls)
+        conf = float(box.conf)
+        cls = int(box.cls)
+        xyxy = box.xyxy.tolist()
+
+        detections.append({
+            "class_id": cls,
+            "class": "sexy" if cls == 1 else "normal",
+            "confidence": conf,
+            "box": xyxy,
         })
 
-    return {"label": label, "boxes": boxes}
+        if cls == 1 and conf >= threshold:
+            is_sexy = True
+            max_conf = max(max_conf, conf)
+
+    return {
+        "status": "ok",
+        "is_sexy": is_sexy,
+        "message": "Sexy content detected" if is_sexy else "No sexy content detected",
+        "confidence": max_conf,
+        "detections": detections
+    }

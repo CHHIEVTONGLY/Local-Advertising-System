@@ -37,6 +37,7 @@ export default function PublishForm() {
   const [end, setEnd] = useState("");
   const [duration, setDuration] = useState(0);
   const [pricePerSecond, setPricePerSecond] = useState(0.5);
+  const [checkingImage, setCheckingImage] = useState(false);
 
   const [msg, setMsg] = useState("");
 
@@ -371,47 +372,48 @@ export default function PublishForm() {
 
     setMsg("");
     setMediaFile(f);
+
     const isVideo = f.type.startsWith("video/");
     setType(isVideo ? "video" : "image");
 
-    // Create preview URL
-    const url = URL.createObjectURL(f);
     if (previewUrl) URL.revokeObjectURL(previewUrl);
-    setPreviewUrl(url);
+    setPreviewUrl(null);
 
     // ✅ FRONTEND BANANA CHECK
     if (!isVideo) {
       // Only check images
       try {
+        setCheckingImage(true);
         const formData = new FormData();
         formData.append("file", f);
 
-        const response = await fetch(
-          `${process.env.API_GATEWAY_URL}/api/detect`,
-          {
-            method: "POST",
-            body: formData,
-          }
-        );
+        const response = await fetch("/api/detect", {
+          method: "POST",
+          body: formData,
+        });
 
         const result = await response.json();
 
-        console.log(result);
-
-        if (result.isBanana) {
+        if (result.is_sexy) {
           // depends on your detection API response
-          setMsg("❌ This image is banned (banana).");
+          setCheckingImage(false);
+          setMsg("❌ This image is restricted due to inappropriate content.");
           setMediaFile(null);
           setPreviewUrl(null);
           setType("");
           return;
         }
+        setCheckingImage(false);
       } catch (error) {
         console.error("Image detection failed", error);
+        setCheckingImage(false);
         setMsg("⚠️ Could not check image, try again.");
         return;
       }
     }
+
+    const url = URL.createObjectURL(f);
+    setPreviewUrl(url);
 
     // ✅ Proceed with backend upload
     try {
@@ -612,7 +614,7 @@ export default function PublishForm() {
               : "border-slate-300 hover:border-sky-400 dark:border-slate-700 cursor-pointer",
           ].join(" ")}
         >
-          {uploading ? (
+          {uploading || checkingImage ? (
             <>
               <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-yellow-600"></div>
               <p className="text-sm text-yellow-700">Uploading file...</p>
