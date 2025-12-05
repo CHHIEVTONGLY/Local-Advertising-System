@@ -7,7 +7,6 @@ import WalletFilterDropdown from "@/app/components/history/wallet/TypeFilter";
 import DateRangeQueryFilter from "@/app/components/history/wallet/DataRangeFilter";
 import { useSearchParams } from "next/navigation";
 import type { TransactionPayload, Transaction } from "@/app/types/Transaction";
-import ExportButton from "@/app/components/common/ExcelExport";
 
 type WalletTxType = "Deposit" | "Refund" | "Deduction";
 type WalletTx = {
@@ -138,26 +137,6 @@ function WalletHistoryInner() {
           />
           {/* Filter Date Range */}
           <DateRangeQueryFilter />
-
-          {/* Export Excel Data  */}
-          <ExportButton
-            data={filtered}
-            filename={`transactions_${new Date().toISOString().slice(0, 10)}`}
-            sheetName="Transactions"
-            fileType="xlsx" // or "csv"
-            buttonLabel="Export Excel"
-            columns={[
-              { key: "id", header: "ID" },
-              { key: "orderId", header: "Order ID" },
-              { key: "type", header: "Type" },
-              { key: "amount", header: "Amount", formatter: (v) => Number(v) },
-              {
-                key: "createdAt",
-                header: "Created At",
-                formatter: (v) => new Date(v).toLocaleString(),
-              },
-            ]}
-          />
         </div>
 
         <div className="p-3 space-y-2">

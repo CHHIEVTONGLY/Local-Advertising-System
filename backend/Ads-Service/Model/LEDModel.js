@@ -13,6 +13,7 @@ const LedSchema = new Schema({
     },
   },
   status: { type: String, enum: ["active", "maintenance"], default: "active" },
+  pricing: { type: Schema.Types.ObjectId, ref: "Pricing" },
 });
 
 const Led = mongoose.model("Led", LedSchema);

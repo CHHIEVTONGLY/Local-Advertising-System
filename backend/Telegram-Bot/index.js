@@ -13,7 +13,8 @@ const {
 const bot = new Telegraf(process.env.BOT_TOKEN);
 const API_GATEWAY_URL = process.env.API_GATEWAY_URL;
 
-const wsConnection = new WebSocketConnection("ws://localhost:8080");
+const WS_URL = process.env.WS_URL || "ws://localhost:13010";
+const wsConnection = new WebSocketConnection(WS_URL);
 
 let previousAdminAdsCount = 0;
 
@@ -63,6 +64,7 @@ wsConnection.onMessage("adminUpdate", async (message) => {
 
       const adDetailsMessage =
         `\n\n📄 *Latest Ad Details:*\n` +
+        `👨🏻‍💻 PID: \`${latestAd.publisherId}\`\n` +
         `🎯 Ads ID: \`${latestAd._id}\`\n` +
         `🏷️ **${latestAd.title}**\n` +
         `💰 Total Cost: $${latestAd.totalCost}\n` +
@@ -414,6 +416,8 @@ bot.on("callback_query", async (ctx) => {
                 }
               );
             }
+
+            // ! Refund handled in the backend
           } catch (error) {
             ctx.answerCbQuery("❌ Error updating message caption");
           }

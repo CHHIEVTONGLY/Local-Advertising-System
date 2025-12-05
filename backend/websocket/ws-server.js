@@ -64,7 +64,7 @@ wss.on("connection", (ws) => {
   );
 
   ws.on("close", () => console.log("Client disconnected"));
-});``
+});
 
 // Poll API every 1 second
 setInterval(fetchAds, 1000);
