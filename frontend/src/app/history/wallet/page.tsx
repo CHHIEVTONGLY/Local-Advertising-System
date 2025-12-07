@@ -7,6 +7,7 @@ import WalletFilterDropdown from "@/app/components/history/wallet/TypeFilter";
 import DateRangeQueryFilter from "@/app/components/history/wallet/DataRangeFilter";
 import { useSearchParams } from "next/navigation";
 import type { TransactionPayload, Transaction } from "@/app/types/Transaction";
+import ExportExcel from "@/app/components/common/ExportExcel";
 
 type WalletTxType = "Deposit" | "Refund" | "Deduction";
 type WalletTx = {
@@ -137,6 +138,9 @@ function WalletHistoryInner() {
           />
           {/* Filter Date Range */}
           <DateRangeQueryFilter />
+
+          {/* Export Excel */}
+          <ExportExcel data={filtered} />
         </div>
 
         <div className="p-3 space-y-2">

@@ -38,6 +38,8 @@ services:
       - "13010:8080"
     depends_on:
       - ads
+    env_file:
+      - ./backend/websocket/.env
     networks:
       - app-network
 
