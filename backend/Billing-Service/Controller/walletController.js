@@ -24,7 +24,7 @@ const createWallet = asyncHandler(async (req, res) => {
     const { userId } = req.body;
 
     let wallet = await Wallet.findOne({ userId });
-    if (wallet) return res.status(400).json({ error: "Wallet already exists" });
+    if (wallet) return res.status(409).json({ error: "Wallet already exists" });
 
     wallet = await Wallet.create({ userId, balance: 0 });
     res.status(200).send({ success: true, data: wallet });

@@ -20,6 +20,7 @@ export default function AdCard({ ad }: { ad: AdsType }) {
   } = ad;
 
   const [showModal, setShowModal] = useState(false);
+  const [formattedTime, setFormattedTime] = useState("");
 
   useEffect(() => {
     if (showModal) {
@@ -33,6 +34,14 @@ export default function AdCard({ ad }: { ad: AdsType }) {
       document.body.style.overflow = "unset";
     };
   }, [showModal]);
+
+  useEffect(() => {
+    setFormattedTime(
+      `${new Date(displayTime.startTime).toLocaleString()} → ${new Date(
+        displayTime.endTime
+      ).toLocaleString()}`
+    );
+  }, [displayTime]);
 
   const badge = (label: string, value: string) => {
     const colors: Record<string, string> = {
@@ -113,8 +122,7 @@ export default function AdCard({ ad }: { ad: AdsType }) {
               <span className="font-semibold">LED:</span> {led.location}
             </p>
             <p className="col-span-2 text-xs text-gray-500">
-              {new Date(displayTime.startTime).toLocaleString()} →{" "}
-              {new Date(displayTime.endTime).toLocaleString()}
+              {formattedTime || "Loading..."}
             </p>
           </div>
           <div className="flex justify-between items-center pt-3 border-t">

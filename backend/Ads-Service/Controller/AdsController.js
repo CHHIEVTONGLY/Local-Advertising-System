@@ -1,6 +1,7 @@
 const Ads = require("../Model/AdsModel");
 const asyncHandler = require("express-async-handler");
 const s3 = require("../utils/s3");
+const resizeImage240 = require("../utils/resizeImage240");
 
 const getUserAds = asyncHandler(async (req, res) => {
   try {
@@ -292,23 +293,33 @@ const getBookedRanges = asyncHandler(async (req, res) => {
 const uploadTempFile = asyncHandler(async (req, res) => {
   const file = req.file;
   const user = req.user.id;
+
   if (!file) return res.status(400).send("No file uploaded");
   if (!user) return res.status(400).send("No user found");
 
-  // Generate unique tempKey for tracking
   const timestamp = Date.now();
   const tempKey = `tmp-uploads/${user}/${timestamp}-${file.originalname}`;
+
+  let uploadBuffer = file.buffer;
+  let uploadMimeType = file.mimetype;
+
+  // ✅ Resize ONLY images
+  if (file.mimetype.startsWith("image/")) {
+    uploadBuffer = await resizeImage240(file.buffer);
+    uploadMimeType = "image/jpeg";
+  }
 
   const params = {
     Bucket: process.env.AWS_BUCKET_NAME,
     Key: tempKey,
-    Body: file.buffer,
-    ContentType: file.mimetype,
+    Body: uploadBuffer, // ✅ FIXED
+    ContentType: uploadMimeType, // ✅ FIXED
     ContentDisposition: "inline",
     Metadata: {
       uploadedBy: user,
       originalName: file.originalname,
       uploadTimestamp: timestamp.toString(),
+      resized: file.mimetype.startsWith("image/") ? "true" : "false",
     },
   };
 
@@ -323,8 +334,9 @@ const uploadTempFile = asyncHandler(async (req, res) => {
         userId: user,
         originalName: file.originalname,
         timestamp,
-        fileType: file.mimetype,
-        fileSize: file.size,
+        fileType: uploadMimeType,
+        fileSize: uploadBuffer.length, // ✅ actual size
+        resized: file.mimetype.startsWith("image/"),
       },
     });
   } catch (err) {
