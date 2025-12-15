@@ -1,9 +1,10 @@
 const LEDModel = require("../Model/LEDModel");
+const PricingModel = require("../Model/PricingModel");
 const asyncHandler = require("express-async-handler");
 
 const getLEDs = asyncHandler(async (req, res) => {
   try {
-    const leds = await LEDModel.find();
+    const leds = await LEDModel.find().populate("pricing");
     res.status(200).send(leds);
   } catch (error) {
     res.status(500).json({ message: error.message });
@@ -26,7 +27,20 @@ const createLED = asyncHandler(async (req, res) => {
         .send({ message: "LED with this name already exists" });
     }
 
-    const led = new LEDModel({ name, location, screenSize });
+    const pricing = await PricingModel.create({
+      basePrice: 5,
+      primeMultiplier: 1.5,
+      weekendMultiplier: 1.2,
+      offPeakMultiplier: 0.7,
+      primeHours: [17, 18, 19],
+    });
+
+    const led = new LEDModel({
+      name,
+      location,
+      screenSize,
+      pricing: pricing._id,
+    });
     await led.save();
     res.status(201).send(led);
   } catch (error) {

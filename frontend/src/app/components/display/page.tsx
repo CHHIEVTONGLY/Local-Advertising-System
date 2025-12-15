@@ -8,9 +8,10 @@ export default function DebugWebSocket() {
 
   // Fetch ads via WebSocket
   useEffect(() => {
-    const ws = new WebSocket("ws://localhost:8080");
+    const wsUrl = process.env.NEXT_PUBLIC_WS_URL || "ws://localhost:3010";
+    const ws = new WebSocket(wsUrl);
 
-    ws.onopen = () => console.log("WebSocket connected");
+    ws.onopen = () => console.log("WebSocket connected", wsUrl);
     ws.onmessage = (event) => {
       const data = JSON.parse(event.data);
       if (data.action === "init" || data.action === "update") {

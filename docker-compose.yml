@@ -1,0 +1,76 @@
+version: "3.9"
+
+services:
+  users:
+    build: ./backend/User-Service
+    container_name: users-service
+    ports:
+      - "13001:13001"
+    env_file:
+      - ./backend/User-Service/.env
+    networks:
+      - app-network
+
+  ads:
+    build: ./backend/Ads-Service
+    container_name: ads-service
+    ports:
+      - "13002:13002"
+    env_file:
+      - ./backend/Ads-Service/.env
+    networks:
+      - app-network
+
+  billing:
+    build: ./backend/Billing-Service
+    container_name: billing-service
+    ports:
+      - "13003:13003"
+    env_file:
+      - ./backend/Billing-Service/.env
+    networks:
+      - app-network
+
+  websocket:
+    build: ./backend/websocket
+    container_name: websocket-service
+    ports:
+      - "13010:8080"
+    depends_on:
+      - ads
+    env_file:
+      - ./backend/websocket/.env
+    networks:
+      - app-network
+
+  frontend:
+    build: ./frontend
+    container_name: frontend
+    ports:
+      - "3000:3000"
+    networks:
+      - app-network
+
+  kong:
+    image: kong:3.9
+    container_name: kong
+    environment:
+      KONG_DATABASE: "off"
+      KONG_DECLARATIVE_CONFIG: /config/kong.yml
+    volumes:
+      - ./backend/kong-gateway/kong.yml:/config/kong.yml:ro
+    ports:
+      - "8000:8000" # proxy (http)
+      - "8443:8443" # proxy (https)
+      - "8001:8001" # admin (http)
+      - "8444:8444" # admin (https)
+    depends_on:
+      - users
+      - ads
+      - billing
+    networks:
+      - app-network
+
+networks:
+  app-network:
+    driver: bridge

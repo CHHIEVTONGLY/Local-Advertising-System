@@ -10,13 +10,19 @@ const PORT = process.env.PORT || 4000;
 const app = express();
 
 app.use(helmet());
-app.use(cors());
+app.use(
+  cors({
+    origin: process.env.FRONTEND_URL,
+    credentials: true,
+  })
+);
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
 const LEDRoutes = require("./Router/LEDsRoutes");
 const AdsRoutes = require("./Router/AdsRoutes");
 const telegramBotRoutes = require("./Router/telegramBotRoutes");
+const pricingRoutes = require("./Router/PricingRoutes");
 
 app.get("/", (req, res) => {
   res.send("Hello from the Ads Service!");
@@ -29,15 +35,11 @@ app.use("/api/ads", AdsRoutes);
 // NOTE : Telegram Bot Routes
 app.use("/api/ads/telegram", telegramBotRoutes);
 
+// NOTE : Pricing Routes
+app.use("/api/ads/pricing", pricingRoutes);
+
 mongoose.connect(uri).then(() => {
   console.log("MongoDB connected successfully");
 });
-
-app.use(
-  cors({
-    origin: process.env.FRONTEND_URL,
-    credentials: true,
-  })
-);
 
 app.listen(PORT, () => console.log(`Server started on port ${PORT}`));
