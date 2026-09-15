@@ -219,7 +219,6 @@ The complete system documentation is organized into six documents covering the s
 | 05  | [User Documentation](./docs/User%20Documentation.pdf)                                         | User guides and instructions for using the platform                      |
 | 06  | [Maintenance & Support Documentation](./docs/Maintenance%20%26%20Support%20Documentation.pdf) | Maintenance, troubleshooting, monitoring, backup, and support procedures |
 
+# Quick Demo Video
 
-# Quick Demo Video 
-
-<video src="./demo/demo.mp4" controls></video>
+🎥 **[Watch the Demo Video on YouTube](https://www.youtube.com/shorts/FxXyLQXWjz4)**
