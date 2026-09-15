@@ -20,6 +20,13 @@ services:
       - ./backend/Ads-Service/.env
     networks:
       - app-network
+    healthcheck:
+      test:
+        ["CMD", "wget", "--spider", "-q", "http://host.docker.internal:13002"]
+      interval: 5s
+      timeout: 3s
+      retries: 5
+      start_period: 10s
 
   billing:
     build: ./backend/Billing-Service
@@ -33,11 +40,12 @@ services:
 
   websocket:
     build: ./backend/websocket
-    container_name: websocket-service
+    container_name: websocket
     ports:
       - "13010:8080"
     depends_on:
-      - ads
+      ads:
+        condition: service_healthy
     env_file:
       - ./backend/websocket/.env
     networks:
@@ -48,6 +56,22 @@ services:
     container_name: frontend
     ports:
       - "3000:3000"
+    networks:
+      - app-network
+
+  image-detector-ai:
+    build: ./backend/image-detector-ai
+    container_name: image-detector-ai
+    ports:
+      - "8009:8009"
+    networks:
+      - app-network
+
+  telegram-bot:
+    build: ./backend/Telegram-Bot
+    container_name: telegram-bot
+    env_file:
+      - ./backend/Telegram-Bot/.env
     networks:
       - app-network
 
@@ -65,9 +89,7 @@ services:
       - "8001:8001" # admin (http)
       - "8444:8444" # admin (https)
     depends_on:
-      - users
       - ads
-      - billing
     networks:
       - app-network
 

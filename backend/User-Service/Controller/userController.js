@@ -35,8 +35,7 @@ const registerUser = asyncHandler(async (req, res) => {
     name,
     email,
     password: hashedPassword,
-    profileUrl:
-      "https://globaladvertisingstorage.s3.ap-southeast-2.amazonaws.com/profiles/default_avatar.jpg",
+    profileUrl: "../assets/default_avatar.jpg",
     company: company || "",
     contact: contact || "",
   });
@@ -55,7 +54,7 @@ const registerUser = asyncHandler(async (req, res) => {
         headers: {
           "x-create-wallet-key": process.env.SECRET_CREATE_WALLET_KEY,
         },
-      }
+      },
     );
     if (response.data.success) {
       walletCreate = "Wallet Created";
@@ -111,7 +110,7 @@ const login = asyncHandler(async (req, res) => {
       telegram: userFound.telegram || {},
     },
     process.env.SECRET_KEY,
-    { expiresIn: "7d" }
+    { expiresIn: "7d" },
   );
   return res.status(200).json({ token, message: "Successfully logged in" });
 });
@@ -174,7 +173,7 @@ const uploadProfile = asyncHandler(async (req, res) => {
         s3.deleteObject({ Bucket: process.env.AWS_BUCKET_NAME, Key: oldKey })
           .promise()
           .catch((err) =>
-            console.warn("Failed to delete old profile image:", err.message)
+            console.warn("Failed to delete old profile image:", err.message),
           );
       }
     }
@@ -182,7 +181,7 @@ const uploadProfile = asyncHandler(async (req, res) => {
     const userUpdatedProfile = await User.findByIdAndUpdate(
       user,
       { profileUrl: data.Location },
-      { new: true }
+      { new: true },
     ).select("-password");
 
     res.status(200).send({
@@ -209,7 +208,7 @@ const sendVerificationEmail = asyncHandler(async (req, res) => {
   const verificationToken = jwt.sign(
     { id: user._id, email: user.email },
     process.env.SECRET_KEY,
-    { expiresIn: "1h" }
+    { expiresIn: "1h" },
   );
 
   const base = (process.env.FRONTEND_URL || "")
@@ -301,7 +300,7 @@ const forgotPassword = asyncHandler(async (req, res) => {
     <div style="font-family: Arial, sans-serif; padding: 20px; background: #f4f4f4;">
       <div style="max-width: 600px; margin: auto; background: #fff; border-radius: 8px; overflow: hidden;">
         <div style="background: #4CAF50; color: white; padding: 20px; text-align: center;">
-          <img src="https://globaladvertisingstorage.s3.ap-southeast-2.amazonaws.com/profiles/SEProject.png" alt="Logo" style="max-width: 100px; margin-bottom: 10px;" />
+          <img src="../assets/default_avatar.jpg" alt="Logo" style="max-width: 100px; margin-bottom: 10px;" />
           <h1 style="margin: 0;">Password Reset</h1>
         </div>
         <div style="padding: 20px;">

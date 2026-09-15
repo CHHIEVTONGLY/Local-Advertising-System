@@ -14,6 +14,7 @@ const bot = new Telegraf(process.env.BOT_TOKEN);
 const API_GATEWAY_URL = process.env.API_GATEWAY_URL;
 
 const WS_URL = process.env.WS_URL || "ws://localhost:13010";
+
 const wsConnection = new WebSocketConnection(WS_URL);
 
 let previousAdminAdsCount = 0;
@@ -33,7 +34,7 @@ wsConnection.onMessage("init", (message) => {
 wsConnection.onMessage("adminUpdate", async (message) => {
   const currentCount = message.ads.length;
   console.log(
-    `👑 Admin ads updated: ${currentCount} pending ads (was ${previousAdminAdsCount})`
+    `👑 Admin ads updated: ${currentCount} pending ads (was ${previousAdminAdsCount})`,
   );
 
   try {
@@ -54,7 +55,7 @@ wsConnection.onMessage("adminUpdate", async (message) => {
 
       // Sort by creation time (most recent first)
       const sortedNewAds = newAds.sort(
-        (a, b) => new Date(b.createdAt) - new Date(a.createdAt)
+        (a, b) => new Date(b.createdAt) - new Date(a.createdAt),
       );
 
       // CREATE RICH NOTIFICATION WITH NEW AD DETAILS
@@ -134,7 +135,7 @@ wsConnection.onMessage("adminUpdate", async (message) => {
       }
 
       console.log(
-        `✅ Notified admin group about ${sortedNewAds.length} new ad(s)`
+        `✅ Notified admin group about ${sortedNewAds.length} new ad(s)`,
       );
 
       // Update stored ad IDs
@@ -142,7 +143,7 @@ wsConnection.onMessage("adminUpdate", async (message) => {
     } else if (currentCount < previousAdminAdsCount) {
       const processedCount = previousAdminAdsCount - currentCount;
       console.log(
-        `✅ ${processedCount} ad(s) were processed (approved/rejected)`
+        `✅ ${processedCount} ad(s) were processed (approved/rejected)`,
       );
 
       // Update stored ad IDs
@@ -174,7 +175,7 @@ bot.start(async (ctx) => {
         token,
         chatId: ctx.chat.id,
         userId: ctx.from.id.toString(),
-      }
+      },
     );
 
     if (response.data.success) {
@@ -184,7 +185,7 @@ bot.start(async (ctx) => {
             "Your account is no longer linked to this bot.\n" +
             "You won't receive notifications anymore.\n\n" +
             "Thank you for using Global Advertising! 👋",
-          { parse_mode: "Markdown" }
+          { parse_mode: "Markdown" },
         );
       } else if (response.data.action === "connect") {
         ctx.reply(
@@ -196,7 +197,7 @@ bot.start(async (ctx) => {
             "• Account updates\n" +
             "• Important announcements\n\n" +
             "Thank you for using Global Advertising! 🚀",
-          { parse_mode: "Markdown" }
+          { parse_mode: "Markdown" },
         );
       }
     } else {
@@ -208,7 +209,7 @@ bot.start(async (ctx) => {
       console.error("API Error:", error.response.data);
     }
     ctx.reply(
-      "❌ Failed to verify token. Please try again or contact support."
+      "❌ Failed to verify token. Please try again or contact support.",
     );
   }
 });
@@ -229,7 +230,7 @@ bot.on("callback_query", async (ctx) => {
           headers: {
             "x-bot-token": process.env.BOT_TOKEN,
           },
-        }
+        },
       );
 
       if (response.data) {
@@ -244,7 +245,7 @@ bot.on("callback_query", async (ctx) => {
             headers: {
               "x-bot-token": process.env.BOT_TOKEN,
             },
-          }
+          },
         );
 
         if (approvalResponse.data) {
@@ -277,7 +278,7 @@ bot.on("callback_query", async (ctx) => {
                   !line.startsWith("📊 Total pending") &&
                   !line.startsWith("⏰") &&
                   !line.startsWith("🆕") &&
-                  !line.startsWith("Please review for approval! ⬇️")
+                  !line.startsWith("Please review for approval! ⬇️"),
               )
               .join("\n");
 
@@ -302,7 +303,7 @@ bot.on("callback_query", async (ctx) => {
                 {
                   caption: `✅ Your ad has been approved!\n${cleanCaptionForResponseUser}\nThank you for using our system! 🎉`,
                   parse_mode: "Markdown",
-                }
+                },
               );
             } else if (adsType === "video") {
               bot.telegram.sendVideo(
@@ -311,7 +312,7 @@ bot.on("callback_query", async (ctx) => {
                 {
                   caption: `✅ Your ad has been approved!!\n${cleanCaptionForResponseUser}\nThank you for using our system! 🎉`,
                   parse_mode: "Markdown",
-                }
+                },
               );
             }
           } catch (error) {
@@ -330,7 +331,7 @@ bot.on("callback_query", async (ctx) => {
           headers: {
             "x-bot-token": process.env.BOT_TOKEN,
           },
-        }
+        },
       );
 
       if (response.data) {
@@ -345,7 +346,7 @@ bot.on("callback_query", async (ctx) => {
             headers: {
               "x-bot-token": process.env.BOT_TOKEN,
             },
-          }
+          },
         );
         if (rejectionResponse.data) {
           try {
@@ -377,7 +378,7 @@ bot.on("callback_query", async (ctx) => {
                   !line.startsWith("📊 Total pending") &&
                   !line.startsWith("⏰") &&
                   !line.startsWith("🆕") &&
-                  !line.startsWith("Please review for approval! ⬇️")
+                  !line.startsWith("Please review for approval! ⬇️"),
               )
               .join("\n");
 
@@ -402,7 +403,7 @@ bot.on("callback_query", async (ctx) => {
                     cleanCaptionForResponseUser + rejectionMessage
                   }\nYou can reach out to our support for more details. Thank you for using Global Advertising! 🎉`,
                   parse_mode: "Markdown",
-                }
+                },
               );
             } else if (adsType === "video") {
               bot.telegram.sendVideo(
@@ -413,7 +414,7 @@ bot.on("callback_query", async (ctx) => {
                     cleanCaptionForResponseUser + rejectionMessage
                   }\nYou can reach out to our support for more details. Thank you for using Global Advertising! 🎉`,
                   parse_mode: "Markdown",
-                }
+                },
               );
             }
 

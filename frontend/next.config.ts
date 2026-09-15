@@ -15,6 +15,10 @@ const nextConfig: NextConfig = {
         protocol: "https",
         hostname: "globaladvertisingstorage.s3-ap-southeast-2.amazonaws.com",
       },
+      {
+        protocol: "https",
+        hostname: "demo-advertise.s3-ap-southeast-2.amazonaws.com",
+      },
     ],
   },
 };

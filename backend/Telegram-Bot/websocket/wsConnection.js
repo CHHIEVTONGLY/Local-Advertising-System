@@ -1,7 +1,7 @@
 const WebSocket = require("ws");
 
 class WebSocketConnection {
-  constructor(url = "ws://localhost:8080") {
+  constructor(url = process.env.WS_URL || "ws://localhost:8080") {
     this.url = url;
     this.ws = null;
     this.isConnected = false;
@@ -71,7 +71,7 @@ class WebSocketConnection {
     console.log(
       `🔄 Reconnecting in ${this.reconnectInterval / 1000}s... (${
         this.reconnectAttempts
-      }/${this.maxReconnectAttempts})`
+      }/${this.maxReconnectAttempts})`,
     );
 
     setTimeout(() => {
